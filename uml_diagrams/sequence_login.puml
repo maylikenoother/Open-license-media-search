@@ -1,0 +1,9 @@
+@startuml
+User -> API: Enter email & password
+API -> Database: Check if user exists
+Database -> API: Return user record
+API -> Security: Verify password
+Security -> API: Password valid?
+API -> API: Generate JWT token
+API -> User: Return access token
+@enduml
