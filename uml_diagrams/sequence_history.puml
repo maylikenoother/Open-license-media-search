@@ -1,0 +1,6 @@
+@startuml
+User -> API: Request search history
+API -> Database: Retrieve user's search history
+Database -> API: Return history records
+API -> User: Display search history
+@enduml

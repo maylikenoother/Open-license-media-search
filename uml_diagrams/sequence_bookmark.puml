@@ -1,0 +1,6 @@
+@startuml
+User -> API: Select media to bookmark
+API -> Database: Store media details
+Database -> API: Confirm bookmark
+API -> User: Return success response
+@enduml

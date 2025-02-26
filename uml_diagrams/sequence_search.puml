@@ -1,0 +1,6 @@
+@startuml
+User -> API: Enter search query
+API -> Database: Fetch results
+Database -> API: Return search results
+API -> User: Display search results
+@enduml
