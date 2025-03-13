@@ -1,0 +1,37 @@
+services:
+  app:
+    build: .
+    container_name: open_license_media_api
+    restart: always
+    env_file:
+      - .env  
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app 
+    depends_on:
+      db:
+        condition: service_healthy 
+    command: >
+      sh -c "ls -l /app && alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port 8000"
+
+  db:
+    image: postgres:16
+    container_name: open_license_media_db
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: openlicensemedia
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck: 
+      test: ["CMD", "pg_isready", "-U", "myuser", "-d", "openlicensemedia"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:

@@ -1,20 +1,29 @@
 from sqlalchemy.orm import Session
-from backend import models, schemas, security  # ✅ Import security for password hashing
+from backend import models, schemas, security 
 
 def get_user_by_email(db: Session, email: str):
+    """Retrieve a user by email."""
     return db.query(models.Users).filter(models.Users.email == email).first()
 
-def create_user(db: Session, user: schemas.UserCreate):
-    hashed_password = security.hash_password(user.password)  # ✅ Uses security.py for hashing
-    db_user = models.Users(username=user.username, email=user.email, password_hash=hashed_password)
+def create_user(db: Session, user: schemas.UserCreate, is_admin: bool = False):
+    """Create a new user with a hashed password and assign admin role if specified."""
+    hashed_password = security.hash_password(user.password)
+
+    db_user = models.Users(
+        username=user.username,
+        email=user.email,
+        password_hash=hashed_password,
+        isAdmin=is_admin 
+    )
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
 def authenticate_user(db: Session, email: str, password: str):
-    """Verify user credentials during login"""
+    """Verify user credentials during login."""
     user = get_user_by_email(db, email)
-    if not user or not security.verify_password(password, user.password_hash):  # ✅ Uses security.py for verification
-        return None  # Invalid credentials
+    if not user or not security.verify_password(password, user.password_hash):
+        return None
     return user

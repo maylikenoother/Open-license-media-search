@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, TIMESTAMP, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, TIMESTAMP, JSON, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -11,6 +11,7 @@ class Users(Base):
     email = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(Text, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
+    isAdmin = Column(Boolean, default=False)
 
 class SearchHistory(Base):
     __tablename__ = "search_history"
