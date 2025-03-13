@@ -1,0 +1,59 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+*.env*
+
+# FastAPI specific
+instance/
+*.sqlite3
+*.db
+
+# Logs and debugging
+logs/
+*.log
+
+# Cache files
+*.cache
+*.bak
+
+# Pytest & Coverage reports
+.coverage
+.tox/
+.nox/
+
+# MyPy and Type Checking
+.mypy_cache/
+.dmypy.json
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# IDE and Editor specific files
+.vscode/
+.idea/
+*.iml
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Database Migrations
+migrations/
+
+# Starlette & FastAPI Session Middleware
+session/
+
+# Python Packaging
+*.egg-info/
+*.dist-info/
+build/
+dist/
+
+# Local settings
+settings.py
+config.yaml
