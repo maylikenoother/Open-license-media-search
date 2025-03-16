@@ -8,6 +8,7 @@ from backend.database import get_db
 from sqlalchemy.orm import Session
 from backend import crud, schemas
 import logging
+import httpx
 
 
 load_dotenv()
@@ -44,33 +45,45 @@ async def google_login(request: Request):
     logger.info(f"🔄 OAuth State Before Redirect: {state}") 
     return await oauth.google.authorize_redirect(request, REDIRECT_URI, state=state)
 
+
 @router.get("/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
     """ Handles Google OAuth2 callback and verifies state """
     try:
-        logger.info(" Attempting to retrieve access token from Google...")
+        logger.info("Attempting to retrieve access token from Google...")
 
         incoming_state = request.query_params.get("state")
         stored_state = request.session.get("oauth_state")
 
-        logger.info(f"🔄 Incoming State: {incoming_state}, Stored State: {stored_state}") 
+        logger.info(f" Incoming State: {incoming_state}, Stored State: {stored_state}")
 
         if incoming_state != stored_state:
             raise HTTPException(status_code=400, detail="CSRF Warning! State does not match.")
 
         token = await oauth.google.authorize_access_token(request)
 
-        logger.info(f" Full Token Response: {token}")
+        logger.info(f"✅ Full Token Response: {token}")
 
         if "id_token" not in token:
-            logger.error("❌ Google authentication failed: 'id_token' is missing!")
+            logger.error(" Google authentication failed: 'id_token' is missing!")
             raise HTTPException(status_code=400, detail=f"Google authentication failed: 'id_token' missing in response. Full token response: {token}")
 
-        user_info = await oauth.google.parse_id_token(request, token)
-        logger.info(f"🔄 Parsed User Info: {user_info}")
+        id_token = token["id_token"]
+        logger.info(f"🛠️ Raw `id_token` before verification: {id_token}")
+
+        google_verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
+        async with httpx.AsyncClient() as client:
+            google_response = await client.get(google_verify_url)
+        
+        if google_response.status_code != 200:
+            logger.error(f"Google ID Token verification failed: {google_response.text}")
+            raise HTTPException(status_code=400, detail="Invalid ID token received from Google")
+
+        user_info = google_response.json()
+        logger.info(f"Verified Google User Info: {user_info}")
 
     except Exception as e:
-        logger.error(f"❌ Google authentication failed: {str(e)}")
+        logger.error(f"Google authentication failed: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Google authentication failed: {str(e)}")
 
     email = user_info.get("email")
@@ -84,8 +97,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         user = existing_user
 
     return {
-        "access_token": token.get("access_token"),
-        "id_token": token.get("id_token"),
+        "access_token": token["access_token"],
+        "id_token": id_token,
         "token_type": "bearer",
         "user": user.email
     }
