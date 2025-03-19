@@ -1,0 +1,29 @@
+# Node.js dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Python compiled files
+backend/__pycache__/
+*.py[cod]
+
+# Environment variables
+.env
+backend/.env
+frontend/.env
+
+# Docker files
+docker-compose.override.yml
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Editor and system files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Virtual environments
+venv/
