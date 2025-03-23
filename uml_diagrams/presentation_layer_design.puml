@@ -1,0 +1,22 @@
+@startuml PresentationLayer
+actor User
+participant "React + Vite UI" as UI
+
+== Manual Auth ==
+User -> UI : Fill Registration Form
+UI -> "FastAPI Auth Route" : POST /users/register
+
+User -> UI : Fill Login Form
+UI -> "FastAPI Auth Route" : POST /users/login
+
+== Google OAuth2 ==
+User -> UI : Click "Login with Google"
+UI -> "FastAPI OAuth Route" : GET /auth/google/login
+"FastAPI OAuth Route" -> UI : Redirect with token
+
+== Search ==
+User -> UI : Enter media search query
+UI -> "FastAPI Search Route" : GET /api/search?q={query}
+UI <- "FastAPI" : Search results
+
+@enduml

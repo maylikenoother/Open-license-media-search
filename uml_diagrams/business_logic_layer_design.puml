@@ -1,0 +1,35 @@
+@startuml BusinessLogicLayer
+actor "Frontend (React + Vite)" as Frontend
+participant "Auth Router" as AuthRouter
+participant "OAuth Router" as OAuthRouter
+participant "User Service" as UserService
+participant "Token Utility" as TokenUtil
+participant "Google OAuth Client" as GoogleClient
+participant "Search Router" as SearchRouter
+participant "Openverse API Client" as OpenverseClient
+participant "History Service" as HistoryService
+
+== Manual Auth Flow ==
+Frontend -> AuthRouter : POST /users/register
+AuthRouter -> UserService : create_user()
+
+Frontend -> AuthRouter : POST /users/login
+AuthRouter -> UserService : verify_user()
+UserService -> TokenUtil : generate_jwt()
+
+== Google OAuth2 Flow ==
+Frontend -> OAuthRouter : GET /auth/google/login
+OAuthRouter -> GoogleClient : authorize_redirect()
+
+Frontend -> OAuthRouter : GET /auth/google/callback
+OAuthRouter -> GoogleClient : authorize_access_token()
+GoogleClient -> OAuthRouter : parse_id_token()
+OAuthRouter -> UserService : get_or_create_user()
+UserService -> TokenUtil : generate_jwt()
+
+== Media Search Flow ==
+Frontend -> SearchRouter : GET /api/search
+SearchRouter -> OpenverseClient : fetch_media()
+SearchRouter -> HistoryService : save_search()
+
+@enduml

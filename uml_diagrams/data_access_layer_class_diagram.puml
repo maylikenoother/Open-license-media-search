@@ -1,0 +1,43 @@
+@startuml
+package "Data Access Layer (SQLAlchemy)" {
+
+    class Users <<SQLAlchemy Model>> {
+        +id: Integer
+        +username: String
+        +email: String
+        +password_hash: Text
+        +created_at: TIMESTAMP
+        +isAdmin: Boolean
+    }
+
+    class SearchHistory <<SQLAlchemy Model>> {
+        +id: Integer
+        +user_id: Integer
+        +search_query: Text
+        +search_results: JSON
+        +created_at: TIMESTAMP
+    }
+
+    class UserToken <<SQLAlchemy Model>> {
+        +id: Integer
+        +user_id: Integer
+        +token: Text
+        +created_at: TIMESTAMP
+        +expires_at: TIMESTAMP
+    }
+
+    class Bookmark <<SQLAlchemy Model>> {
+        +id: Integer
+        +user_id: Integer
+        +media_id: Text
+        +media_url: Text
+        +media_type: Text
+        +created_at: TIMESTAMP
+    }
+
+    ' Relationships
+    Users "1" --> "*" SearchHistory : logs
+    Users "1" --> "*" UserToken : owns
+    Users "1" --> "*" Bookmark : saves
+}
+@enduml

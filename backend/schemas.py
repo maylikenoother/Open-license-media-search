@@ -19,3 +19,9 @@ class UserResponse(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class UserTokenCreate(BaseModel):
+    user_id: int
+    token: str
+    expires_at: datetime
+

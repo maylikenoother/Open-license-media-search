@@ -1,12 +1,19 @@
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
-import HomePage from "./pages/HomePage";
+
+import SearchPage from "./pages/SearchPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import BookmarksPage from "./pages/BookmarksPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import Navbar from "./components/Navbar";
+import TokenHandler from './components/TokenHandler'
+
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = !!localStorage.getItem("auth_token");
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
 
 const theme = createTheme({
   palette: {
@@ -21,11 +28,37 @@ function App() {
       <CssBaseline />
       <Navbar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/register" replace />} />
+
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/bookmarks" element={<BookmarksPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+
+        <Route path="/auth/token" element={<TokenHandler />} />
+
+        <Route
+          path="/search"
+          element={
+            <ProtectedRoute>
+              <SearchPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookmarks"
+          element={
+            <ProtectedRoute>
+              <BookmarksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </ThemeProvider>
   );

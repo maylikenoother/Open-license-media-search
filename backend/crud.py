@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from backend import models, schemas, security 
 
+
 def get_user_by_email(db: Session, email: str):
     """Retrieve a user by email."""
     return db.query(models.Users).filter(models.Users.email == email).first()
@@ -27,3 +28,14 @@ def authenticate_user(db: Session, email: str, password: str):
     if not user or not security.verify_password(password, user.password_hash):
         return None
     return user
+def create_user_token(db: Session, token_data: schemas.UserTokenCreate):
+    """Store an OAuth token for a user."""
+    db_token = models.UserToken(
+        user_id=token_data.user_id,
+        token=token_data.token,
+        expires_at=token_data.expires_at
+    )
+    db.add(db_token)
+    db.commit()
+    db.refresh(db_token)
+    return db_token

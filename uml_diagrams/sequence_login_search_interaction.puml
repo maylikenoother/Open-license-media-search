@@ -1,0 +1,21 @@
+@startuml
+actor User
+participant Frontend
+participant Backend
+participant OpenverseAPI
+participant OAuth2Provider
+
+User -> Frontend : Clicks "Login with Google"
+Frontend -> Backend : Redirect to /auth/google
+Backend -> OAuth2Provider : OAuth2 Authorization Request
+OAuth2Provider -> User : User provides credentials
+OAuth2Provider -> Backend : Authorization Code
+Backend -> OAuth2Provider : Token Request
+OAuth2Provider -> Backend : Access Token
+Backend -> DB : Create or retrieve user session
+User -> Frontend : Enters Search Query
+Frontend -> Backend : Send query to /search
+Backend -> OpenverseAPI : Request media with query
+OpenverseAPI -> Backend : Return search results
+Backend -> Frontend : Return results to user
+@enduml

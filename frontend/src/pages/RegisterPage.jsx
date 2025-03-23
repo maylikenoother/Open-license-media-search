@@ -1,12 +1,16 @@
 import React, { useState } from "react";
-import { Container, TextField, Button, Typography } from "@mui/material";
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Divider,
+  Box,
+  Link,
+} from "@mui/material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-// Automatically set API base URL based on environment
-const API_BASE_URL = import.meta.env.MODE === "development"
-  ? "/api"
-  : "http://open_license_media_api:8000";
+import API_BASE_URL from "../config";
 
 const RegisterPage = () => {
   const [username, setUsername] = useState("");
@@ -17,13 +21,13 @@ const RegisterPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError(null); // Reset errors before making a new request
+    setError(null);
 
     try {
       const res = await axios.post(`${API_BASE_URL}/users/register`, {
         username,
         email,
-        password
+        password,
       });
 
       console.log("Registration successful:", res.data);
@@ -34,38 +38,73 @@ const RegisterPage = () => {
     }
   };
 
+  const handleGoogleRegister = () => {
+    window.location.href = `${API_BASE_URL}/auth/google/login`;
+  };
+
   return (
-    <Container>
-      <Typography variant="h4">Register</Typography>
-      {error && <Typography color="error">{error}</Typography>}
-      <form onSubmit={handleRegister}>
-        <TextField
-          label="Username"
-          fullWidth
-          margin="normal"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <TextField
-          label="Email"
-          fullWidth
-          margin="normal"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <TextField
-          label="Password"
-          type="password"
-          fullWidth
-          margin="normal"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <Button type="submit" variant="contained" color="primary">
+    <Container maxWidth="xs">
+      <Box
+        sx={{
+          mt: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Typography component="h1" variant="h5">
           Register
+        </Typography>
+
+        {error && <Typography color="error">{error}</Typography>}
+
+        <form onSubmit={handleRegister} style={{ width: "100%" }}>
+          <TextField
+            label="Username"
+            fullWidth
+            margin="normal"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <TextField
+            label="Email"
+            fullWidth
+            margin="normal"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <TextField
+            label="Password"
+            type="password"
+            fullWidth
+            margin="normal"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+            Register
+          </Button>
+        </form>
+
+        <Divider sx={{ my: 2, width: "100%" }}>OR</Divider>
+
+        <Button
+          variant="contained"
+          color="secondary"
+          fullWidth
+          onClick={handleGoogleRegister}
+        >
+          Continue with Google
         </Button>
-      </form>
+
+        <Typography sx={{ mt: 2 }}>
+          Already registered?{" "}
+          <Link href="/login" underline="hover">
+            Login
+          </Link>
+        </Typography>
+      </Box>
     </Container>
   );
 };
