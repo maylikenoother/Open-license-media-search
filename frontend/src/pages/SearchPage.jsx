@@ -52,12 +52,19 @@ const SearchPage = () => {
   };
 
   return (
-    <Container>
-      <Typography variant="h4" sx={{ mt: 4, mb: 2 }}>
+    <Container sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: 4 }}>
+      <Typography variant="h4" sx={{ mb: 2 }}>
         Search for Media
       </Typography>
 
-      <Box display="flex" gap={2} flexDirection="column" maxWidth={500}>
+      <Box
+        display="flex"
+        gap={2}
+        flexDirection="column"
+        alignItems="center"
+        width="100%"
+        maxWidth={500}
+      >
         <TextField
           label="Search Query"
           value={query}
@@ -70,10 +77,11 @@ const SearchPage = () => {
           onChange={(e) => setMediaType(e.target.value)}
           fullWidth
         />
-        <Button variant="contained" onClick={searchMedia}>
+        <Button variant="contained" onClick={searchMedia} fullWidth>
           Search
         </Button>
       </Box>
+
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>

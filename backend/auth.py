@@ -1,55 +1,36 @@
-import os
-from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
-from dotenv import load_dotenv
+# backend/auth.py
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-from backend.security import verify_password
-from backend.database import get_db
-from backend import models
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt
+import requests
+import os
 
-load_dotenv()
+# Get your Clerk configuration from environment variables
+CLERK_JWT_ISSUER = os.getenv("CLERK_JWT_ISSUER")
+CLERK_JWT_JWKS_URL = os.getenv("CLERK_JWT_JWKS_URL")
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+# HTTP Bearer Auth
+bearer_scheme = HTTPBearer()
 
-if not SECRET_KEY or not ALGORITHM:
-    raise ValueError("Missing environment variables. Check your .env file.")
+def get_public_key():
+    jwks = requests.get(CLERK_JWT_JWKS_URL).json()
+    return jwks['keys'][0]  # You can cache this
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-def create_access_token(data: dict):
-    """Generates a JWT token with an expiration time"""
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
-    to_encode.update({"exp": expire, "token_type": "access"})
-    
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def verify_access_token(token: str):
-    """Verifies the validity of a JWT token"""
+def verify_clerk_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    token = credentials.credentials
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        key = get_public_key()
+        payload = jwt.decode(
+            token,
+            key,
+            algorithms=["RS256"],
+            audience=None,
+            issuer=CLERK_JWT_ISSUER,
+            options={"verify_aud": False}
+        )
         return payload
-    except JWTError as e:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-        ) from e
-
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Retrieves the user from the database using the JWT token"""
-    payload = verify_access_token(token)
-    
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-    
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    
-    return user
+            detail=f"Invalid Clerk JWT: {str(e)}"
+        )
