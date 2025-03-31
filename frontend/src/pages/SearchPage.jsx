@@ -7,10 +7,13 @@ import {
   Container,
   Typography,
   Box,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import MediaCard from "../components/MediaCard";
 import API_BASE_URL from "../config";
-import { useNavigate } from "react-router-dom";
 
 const SearchPage = () => {
   const [query, setQuery] = useState("");
@@ -18,8 +21,6 @@ const SearchPage = () => {
   const [media, setMedia] = useState([]);
   const [error, setError] = useState(null);
   const [authToken, setAuthToken] = useState(localStorage.getItem("auth_token"));
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -31,10 +32,8 @@ const SearchPage = () => {
         setAuthToken(token);
       }
       window.history.replaceState({}, "", "/search");
-    } else if (!authToken) {
-      navigate("/login");
     }
-  }, [authToken, navigate]);
+  }, []);
 
   const searchMedia = async () => {
     setError(null);
@@ -71,17 +70,22 @@ const SearchPage = () => {
           onChange={(e) => setQuery(e.target.value)}
           fullWidth
         />
-        <TextField
-          label="Media Type (e.g., images, audio)"
-          value={mediaType}
-          onChange={(e) => setMediaType(e.target.value)}
-          fullWidth
-        />
+        <FormControl fullWidth>
+          <InputLabel id="media-type-label">Media Type</InputLabel>
+          <Select
+            labelId="media-type-label"
+            value={mediaType}
+            label="Media Type"
+            onChange={(e) => setMediaType(e.target.value)}
+          >
+            <MenuItem value="images">Images</MenuItem>
+            <MenuItem value="audio">Audio</MenuItem>
+          </Select>
+        </FormControl>
         <Button variant="contained" onClick={searchMedia} fullWidth>
           Search
         </Button>
       </Box>
-
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>
