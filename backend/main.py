@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from backend.routes import search
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from backend.routes import users
 
 app = FastAPI(title="Open License Media Search API")
 
@@ -14,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(search.router, prefix="/api", tags=["Search"])
+app.include_router(users.router, prefix="/users", tags=["Users"])
 
 print(app.routes)
 

@@ -1,8 +1,16 @@
-// src/components/Navbar.jsx
 import React from "react";
-import { AppBar, Toolbar, Typography, Box, Button } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  IconButton,
+  Button,
+  Tooltip,
+} from "@mui/material";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import { Link as RouterLink } from "react-router-dom";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 
 const Navbar = () => (
   <AppBar position="static">
@@ -22,8 +30,16 @@ const Navbar = () => (
             <Button color="inherit">Sign In</Button>
           </SignInButton>
         </SignedOut>
+
         <SignedIn>
-          <UserButton afterSignOutUrl="/" />
+          <Box display="flex" alignItems="center" gap={2}>
+            <Tooltip title="View your bookmarks" arrow>
+              <IconButton component={RouterLink} to="/bookmarks" color="inherit">
+                <BookmarkBorderIcon />
+              </IconButton>
+            </Tooltip>
+            <UserButton afterSignOutUrl="/" />
+          </Box>
         </SignedIn>
       </Box>
     </Toolbar>

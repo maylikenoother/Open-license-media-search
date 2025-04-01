@@ -9,14 +9,28 @@ const BookmarksPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/users/bookmarks`)
+    const token = localStorage.getItem("auth_token");
+
+    if (!token) {
+      setError("You're not signed in.");
+      return;
+    }
+
+    axios
+      .get(`${API_BASE_URL}/users/bookmarks`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .then((res) => setBookmarks(res.data))
       .catch(() => setError("Failed to fetch bookmarks."));
   }, []);
 
   return (
     <Container>
-      <Typography variant="h4">Your Bookmarks</Typography>
+      <Typography variant="h4" sx={{ mb: 2 }}>
+        Your Bookmarks
+      </Typography>
       {error && <Typography color="error">{error}</Typography>}
       <MediaGrid media={bookmarks} />
     </Container>
