@@ -1,13 +1,28 @@
-// src/main.jsx
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import { ClerkProviderWrapper } from "./ClerkProviderWrapper";
+// src/index.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import App from './App';
+import { ClerkProviderWrapper } from './ClerkProviderWrapper';
+import './styles/global.css';
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+// Create React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 60 * 1000, // 1 minute
+    },
+  },
+});
+
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ClerkProviderWrapper>
-      <App />
-    </ClerkProviderWrapper>
+    <QueryClientProvider client={queryClient}>
+      <ClerkProviderWrapper>
+        <App />
+      </ClerkProviderWrapper>
+    </QueryClientProvider>
   </React.StrictMode>
 );

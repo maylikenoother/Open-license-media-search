@@ -1,105 +1,279 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+// src/pages/SearchPage.jsx
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  TextField,
-  Button,
-  Grid,
   Container,
-  Typography,
+  Grid,
   Box,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-} from "@mui/material";
-import MediaCard from "../components/MediaCard";
-import API_BASE_URL from "../config";
+  Typography,
+  Paper,
+  Tabs,
+  Tab,
+  useMediaQuery,
+  useTheme,
+  Drawer,
+  IconButton,
+  Divider,
+  Fab
+} from '@mui/material';
+import {
+  Tune as TuneIcon,
+  Close as CloseIcon,
+  FilterAlt as FilterAltIcon
+} from '@mui/icons-material';
+import { useUser } from '@clerk/clerk-react';
+import SearchForm from '../components/SearchForm';
+import MediaGrid from '../components/MediaGrid';
+import SearchFilters from '../components/SearchFilters';
+import SearchHistory from '../components/SearchHistory';
+import useMediaSearch from '../hooks/useMediaSearch';
 
+/**
+ * SearchPage component
+ * Main page for searching media
+ */
 const SearchPage = () => {
-  const [query, setQuery] = useState("");
-  const [mediaType, setMediaType] = useState("images");
-  const [media, setMedia] = useState([]);
-  const [error, setError] = useState(null);
-  const [authToken, setAuthToken] = useState(localStorage.getItem("auth_token"));
-
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isSignedIn, user } = useUser();
+  
+  // Get search functionality from custom hook
+  const { 
+    searchParams,
+    setSearchParams,
+    searchPerformed,
+    popularMedia,
+    searchResults,
+    isLoading,
+    isError,
+    error,
+    performSearch,
+    resetSearch,
+    changePage,
+    changeMediaType
+  } = useMediaSearch();
+  
+  // Parse query parameters from URL
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-
-    if (token) {
-      if (!localStorage.getItem("auth_token")) {
-        localStorage.setItem("auth_token", token);
-        setAuthToken(token);
-      }
-      window.history.replaceState({}, "", "/search");
+    const params = new URLSearchParams(location.search);
+    
+    const query = params.get('q');
+    const mediaType = params.get('type') || 'images';
+    const page = parseInt(params.get('page') || '1', 10);
+    const licenseType = params.get('license') || '';
+    const creator = params.get('creator') || '';
+    const tags = params.get('tags') || '';
+    const source = params.get('source') || '';
+    
+    // If there are query parameters, perform search
+    if (query) {
+      const newParams = {
+        query,
+        mediaType,
+        page,
+        licenseType,
+        creator,
+        tags,
+        source
+      };
+      
+      setSearchParams(newParams);
+      performSearch(newParams);
     }
-  }, []);
-
-  const searchMedia = async () => {
-    setError(null);
-    try {
-      const res = await axios.get(
-        `${API_BASE_URL}/api/search?query=${query}&media_type=${mediaType}`,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-      setMedia(res.data.results);
-    } catch (error) {
-      setError("Failed to fetch media. Please try again.");
+  }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Update URL with search parameters
+  useEffect(() => {
+    if (searchPerformed) {
+      const params = new URLSearchParams();
+      
+      if (searchParams.query) params.set('q', searchParams.query);
+      if (searchParams.mediaType) params.set('type', searchParams.mediaType);
+      if (searchParams.page > 1) params.set('page', searchParams.page.toString());
+      if (searchParams.licenseType) params.set('license', searchParams.licenseType);
+      if (searchParams.creator) params.set('creator', searchParams.creator);
+      if (searchParams.tags) params.set('tags', searchParams.tags);
+      if (searchParams.source) params.set('source', searchParams.source);
+      
+      navigate(`?${params.toString()}`, { replace: true });
     }
+  }, [searchParams, searchPerformed, navigate]);
+  
+  // Handle search submission
+  const handleSearch = (data) => {
+    performSearch(data);
   };
-
+  
+  // Handle filter changes
+  const handleFilterChange = (filters) => {
+    performSearch({ ...filters, page: 1 });
+  };
+  
+  // Handle pagination
+  const handlePageChange = (page) => {
+    changePage(page);
+  };
+  
+  // Handle tab change
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+  
+  // Handle search from history
+  const handleSearchFromHistory = (searchData) => {
+    performSearch(searchData);
+    setActiveTab(0); // Switch to results tab
+  };
+  
+  // Toggle mobile filters drawer
+  const toggleMobileFilters = () => {
+    setMobileFiltersOpen(!mobileFiltersOpen);
+  };
+  
+  // Calculate result stats
+  const getResultStats = () => {
+    if (!searchResults) return {};
+    
+    return {
+      totalResults: searchResults.count || 0,
+      totalPages: Math.ceil((searchResults.count || 0) / searchParams.pageSize),
+      currentPage: searchParams.page || 1
+    };
+  };
+  
+  const { totalResults, totalPages, currentPage } = getResultStats();
+  
+  // Media to display (search results or popular media)
+  const mediaToDisplay = searchPerformed ? 
+    (searchResults?.results || []) : 
+    popularMedia;
+  
   return (
-    <Container sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: 4 }}>
-      <Typography variant="h4" sx={{ mb: 2 }}>
-        Search for Media
-      </Typography>
-
-      <Box
-        display="flex"
-        gap={2}
-        flexDirection="column"
-        alignItems="center"
-        width="100%"
-        maxWidth={500}
-      >
-        <TextField
-          label="Search Query"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          fullWidth
-        />
-        <FormControl fullWidth>
-          <InputLabel id="media-type-label">Media Type</InputLabel>
-          <Select
-            labelId="media-type-label"
-            value={mediaType}
-            label="Media Type"
-            onChange={(e) => setMediaType(e.target.value)}
-          >
-            <MenuItem value="images">Images</MenuItem>
-            <MenuItem value="audio">Audio</MenuItem>
-          </Select>
-        </FormControl>
-        <Button variant="contained" onClick={searchMedia} fullWidth>
-          Search
-        </Button>
-      </Box>
-
-      {error && (
-        <Typography color="error" sx={{ mt: 2 }}>
-          {error}
-        </Typography>
-      )}
-
-      <Grid container spacing={2} sx={{ mt: 4 }}>
-        {media.map((item) => (
-          <Grid item key={item.id} xs={12} sm={6} md={4}>
-            <MediaCard item={item} />
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Search form */}
+      <SearchForm 
+        onSearch={handleSearch} 
+        defaultValues={searchParams}
+        isLoading={isLoading}
+      />
+      
+      {/* Main content */}
+      <Grid container spacing={3}>
+        {/* Sidebar filters (desktop) */}
+        {!isMobile && (
+          <Grid item xs={12} md={3} lg={2}>
+            <SearchFilters
+              activeFilters={searchParams}
+              onFilterChange={handleFilterChange}
+              mediaType={searchParams.mediaType}
+              onReset={resetSearch}
+            />
           </Grid>
-        ))}
+        )}
+        
+        {/* Main content area */}
+        <Grid item xs={12} md={9} lg={10}>
+          {/* Tabs for results/history */}
+          {isSignedIn && (
+            <Paper sx={{ mb: 3 }}>
+              <Tabs
+                value={activeTab}
+                onChange={handleTabChange}
+                variant={isSmall ? "fullWidth" : "standard"}
+              >
+                <Tab label="Search Results" />
+                <Tab label="Search History" />
+              </Tabs>
+            </Paper>
+          )}
+          
+          {/* Search Results Tab */}
+          {(!isSignedIn || activeTab === 0) && (
+            <Box>
+              {searchPerformed && (
+                <Typography variant="h5" component="h1" gutterBottom>
+                  {isLoading ? (
+                    'Searching...'
+                  ) : searchResults?.results?.length > 0 ? (
+                    `Results for "${searchParams.query}"`
+                  ) : (
+                    `No results found for "${searchParams.query}"`
+                  )}
+                </Typography>
+              )}
+              
+              <MediaGrid
+                media={mediaToDisplay}
+                isLoading={isLoading}
+                error={error}
+                onPageChange={handlePageChange}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalResults={totalResults}
+                query={searchParams.query}
+                mediaType={searchParams.mediaType}
+              />
+            </Box>
+          )}
+          
+          {/* Search History Tab */}
+          {isSignedIn && activeTab === 1 && (
+            <SearchHistory onSearchSelect={handleSearchFromHistory} />
+          )}
+        </Grid>
       </Grid>
+      
+      {/* Mobile filters button */}
+      {isMobile && (
+        <Fab
+          color="primary"
+          aria-label="filter"
+          onClick={toggleMobileFilters}
+          sx={{ position: 'fixed', bottom: 20, right: 20 }}
+        >
+          <FilterAltIcon />
+        </Fab>
+      )}
+      
+      {/* Mobile filters drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileFiltersOpen}
+        onClose={toggleMobileFilters}
+      >
+        <Box sx={{ width: 280, p: 2 }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              mb: 2
+            }}
+          >
+            <Typography variant="h6">Filters</Typography>
+            <IconButton onClick={toggleMobileFilters}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          
+          <Divider sx={{ mb: 2 }} />
+          
+          <SearchFilters
+            activeFilters={searchParams}
+            onFilterChange={(filters) => {
+              handleFilterChange(filters);
+              if (isMobile) setMobileFiltersOpen(false);
+            }}
+            mediaType={searchParams.mediaType}
+            onReset={resetSearch}
+          />
+        </Box>
+      </Drawer>
     </Container>
   );
 };

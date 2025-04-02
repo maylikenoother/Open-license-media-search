@@ -1,24 +1,55 @@
-import React from "react";
-import {
-  ClerkProvider,
-  SignedIn,
-  SignedOut,
-  RedirectToSignIn
-} from "@clerk/clerk-react";
-import { BrowserRouter } from "react-router-dom";
+// src/ClerkProviderWrapper.jsx
+import React from 'react';
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
+import { BrowserRouter, useNavigate } from 'react-router-dom';
+import config from './config';
 
-const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+/**
+ * ClerkProviderWithNavigate component
+ * This wraps the ClerkProvider with the routing context
+ */
+function ClerkProviderWithNavigate({ children }) {
+  const navigate = useNavigate();
+  
+  return (
+    <ClerkProvider
+      publishableKey={config.clerk.publishableKey}
+      navigate={(to) => navigate(to)}
+    >
+      {children}
+    </ClerkProvider>
+  );
+}
 
-export const ClerkProviderWrapper = ({ children }) => (
-  <ClerkProvider
-    publishableKey={publishableKey}
-    navigate={(to) => window.history.pushState(null, "", to)}
-  >
-    <BrowserRouter>
+/**
+ * AuthenticationWrapper component
+ * This component handles the authenticated vs unauthenticated views
+ */
+function AuthenticationWrapper({ children }) {
+  return (
+    <>
       <SignedIn>{children}</SignedIn>
       <SignedOut>
-        <RedirectToSignIn redirectUrl="/search" />
+        <RedirectToSignIn />
       </SignedOut>
+    </>
+  );
+}
+
+/**
+ * ClerkProviderWrapper component
+ * This provides Clerk authentication to the entire application
+ */
+export function ClerkProviderWrapper({ children, requireAuth = true }) {
+  return (
+    <BrowserRouter>
+      <ClerkProviderWithNavigate>
+        {requireAuth ? (
+          <AuthenticationWrapper>{children}</AuthenticationWrapper>
+        ) : (
+          children
+        )}
+      </ClerkProviderWithNavigate>
     </BrowserRouter>
-  </ClerkProvider>
-);
+  );
+}

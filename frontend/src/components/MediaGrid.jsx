@@ -1,69 +1,230 @@
-import React, { useEffect, useState } from "react";
-import {
-  Card,
-  CardMedia,
-  CardContent,
-  Typography,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
-import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
-import axios from "axios";
-import API_BASE_URL from "../config";
+// src/components/MediaGrid.jsx
+import React, { useState, useEffect } from 'react';
+import { 
+  Grid, 
+  Box, 
+  Typography, 
+  Alert, 
+  CircularProgress, 
+  Pagination, 
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
+} from '@mui/material';
+import { useQuery } from 'react-query';
+import MediaCard from './MediaCard';
+import { getBookmarks } from '../services/bookmarkService';
 
-const MediaCard = ({ item }) => {
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const token = localStorage.getItem("auth_token");
-
-  const media_id = item.id;
-  const media_url = item.url || item.url_o || item.thumbnail || item.foreign_landing_url;
-  const media_type = item.provider || "images";
-
-  // Check if item is already bookmarked (for demo, we just skip that for now)
-  useEffect(() => {
-    // Optional: preload bookmarks and check here
-    // Skipping for simplicity unless you'd like to track all bookmarks in a parent state
-  }, []);
-
-  const toggleBookmark = async () => {
-    if (!token) return;
-
-    try {
-      if (!isBookmarked) {
-        await axios.post(
-          `${API_BASE_URL}/users/bookmarks`,
-          { media_id, media_url, media_type },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setIsBookmarked(true);
-      } else {
-        await axios.delete(
-          `${API_BASE_URL}/users/bookmarks/${media_id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setIsBookmarked(false);
+/**
+ * MediaGrid component
+ * Displays a grid of media items with pagination
+ */
+const MediaGrid = ({ 
+  media, 
+  isLoading = false, 
+  error = null, 
+  onPageChange = null,
+  currentPage = 1,
+  totalPages = 1,
+  totalResults = 0,
+  query = '',
+  mediaType = 'images'
+}) => {
+  const [bookmarkedMedia, setBookmarkedMedia] = useState({});
+  const [sortOrder, setSortOrder] = useState('relevance');
+  const [displayItems, setDisplayItems] = useState([]);
+  
+  // Fetch bookmarks to highlight already bookmarked items
+  const { data: bookmarks } = useQuery(
+    'bookmarks',
+    getBookmarks,
+    { 
+      staleTime: 60 * 1000, // 1 minute
+      refetchOnWindowFocus: false,
+      onSuccess: (data) => {
+        // Create map of bookmarked media IDs
+        const bookmarkMap = {};
+        data.forEach(bookmark => {
+          bookmarkMap[bookmark.media_id] = true;
+        });
+        setBookmarkedMedia(bookmarkMap);
       }
-    } catch (error) {
-      alert("Bookmark action failed.");
     }
+  );
+  
+  // Update displayed items when media or sort order changes
+  useEffect(() => {
+    if (!media || !Array.isArray(media)) {
+      setDisplayItems([]);
+      return;
+    }
+    
+    // Clone the array to avoid mutating props
+    let items = [...media];
+    
+    // Apply sorting
+    if (sortOrder === 'title_asc') {
+      items.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    } else if (sortOrder === 'title_desc') {
+      items.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+    } else if (sortOrder === 'creator_asc') {
+      items.sort((a, b) => (a.creator || '').localeCompare(b.creator || ''));
+    } else if (sortOrder === 'creator_desc') {
+      items.sort((a, b) => (b.creator || '').localeCompare(a.creator || ''));
+    }
+    // 'relevance' is the default sorting from the API
+    
+    setDisplayItems(items);
+  }, [media, sortOrder]);
+  
+  // Handle bookmark change
+  const handleBookmarkChange = (mediaId, isBookmarked) => {
+    setBookmarkedMedia(prev => ({
+      ...prev,
+      [mediaId]: isBookmarked
+    }));
   };
-
-  return (
-    <Card>
-      <CardMedia component="img" height="140" image={media_url} alt={item.title} />
-      <CardContent sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="h6" noWrap>
-          {item.title}
+  
+  // Handle sort change
+  const handleSortChange = (event) => {
+    setSortOrder(event.target.value);
+  };
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="300px"
+        flexDirection="column"
+      >
+        <CircularProgress size={60} thickness={4} />
+        <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+          Searching for {mediaType}...
         </Typography>
-        <Tooltip title={isBookmarked ? "Remove Bookmark" : "Add to Bookmarks"} arrow>
-          <IconButton onClick={toggleBookmark}>
-            {isBookmarked ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-          </IconButton>
-        </Tooltip>
-      </CardContent>
-    </Card>
+      </Box>
+    );
+  }
+  
+  // Show error state
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ my: 2 }}>
+        Error: {error.message || 'Failed to load media'}
+      </Alert>
+    );
+  }
+  
+  // Show empty state if no results
+  if (!displayItems || displayItems.length === 0) {
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="300px"
+        flexDirection="column"
+        sx={{ px: 2, py: 4, backgroundColor: '#f5f5f5', borderRadius: 2 }}
+      >
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          {query ? 'No results found' : 'Search for open license media'}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" align="center">
+          {query 
+            ? `Try different search terms or filters`
+            : `Enter a search term to find ${mediaType} with open licenses`
+          }
+        </Typography>
+      </Box>
+    );
+  }
+  
+  return (
+    <Box>
+      {/* Results info and sorting */}
+      <Box 
+        display="flex" 
+        justifyContent="space-between" 
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        mb={3}
+        gap={2}
+      >
+        {/* Results count */}
+        <Box>
+          <Typography variant="body1" color="text.secondary">
+            {totalResults ? (
+              <>
+                Showing page {currentPage} of{' '}
+                <Chip 
+                  label={`${totalResults.toLocaleString()} results`} 
+                  color="primary" 
+                  size="small"
+                  variant="outlined"
+                />
+              </>
+            ) : (
+              `Showing ${displayItems.length} items`
+            )}
+          </Typography>
+        </Box>
+        
+        {/* Sorting options */}
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel id="sort-select-label">Sort By</InputLabel>
+          <Select
+            labelId="sort-select-label"
+            value={sortOrder}
+            label="Sort By"
+            onChange={handleSortChange}
+          >
+            <MenuItem value="relevance">Relevance</MenuItem>
+            <MenuItem value="title_asc">Title (A-Z)</MenuItem>
+            <MenuItem value="title_desc">Title (Z-A)</MenuItem>
+            <MenuItem value="creator_asc">Creator (A-Z)</MenuItem>
+            <MenuItem value="creator_desc">Creator (Z-A)</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+      
+      {/* Media grid */}
+      <Grid container spacing={3}>
+        {displayItems.map((item) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
+            <MediaCard 
+              item={item} 
+              isBookmarked={bookmarkedMedia[item.id] || false}
+              onBookmarkChange={handleBookmarkChange}
+            />
+          </Grid>
+        ))}
+      </Grid>
+      
+      {/* Pagination */}
+      {totalPages > 1 && onPageChange && (
+        <Box 
+          display="flex" 
+          justifyContent="center" 
+          mt={4}
+          mb={2}
+        >
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(e, page) => onPageChange(page)}
+            color="primary"
+            showFirstButton
+            showLastButton
+            size="large"
+          />
+        </Box>
+      )}
+    </Box>
   );
 };
 
-export default MediaCard;
+export default MediaGrid;
