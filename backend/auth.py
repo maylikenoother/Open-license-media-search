@@ -74,6 +74,12 @@ def verify_clerk_token(
     Verify the Clerk JWT token and extract user information.
     Also ensures the user exists in our database.
     """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No credentials provided"
+        )
+    
     token = credentials.credentials
     
     try:

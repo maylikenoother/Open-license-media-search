@@ -3,6 +3,22 @@ import axios from 'axios';
 import config from '../config';
 
 /**
+ * Get authorization headers with token
+ * 
+ * @returns {Object} - Headers object with Authorization if token exists
+ */
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('clerk-token');
+  if (!token) {
+    console.warn('No auth token found. User may not be authenticated.');
+    return {};
+  }
+  return {
+    Authorization: `Bearer ${token}`
+  };
+};
+
+/**
  * Search for media with the given parameters
  * 
  * @param {string} query - The search query
@@ -25,13 +41,13 @@ export const searchMedia = async (query, params = {}) => {
         source
       },
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data;
   } catch (error) {
-    console.error('Error searching media:', error);
+    console.error('Error searching media:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -47,13 +63,13 @@ export const getMediaDetails = async (mediaId, mediaType = 'images') => {
   try {
     const response = await axios.get(`${config.apiUrl}/media/${mediaType}/${mediaId}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data;
   } catch (error) {
-    console.error('Error getting media details:', error);
+    console.error('Error getting media details:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -70,13 +86,13 @@ export const getPopularMedia = async (mediaType = 'images', limit = 20) => {
     const response = await axios.get(`${config.apiUrl}/popular/${mediaType}`, {
       params: { limit },
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data.results;
   } catch (error) {
-    console.error('Error getting popular media:', error);
+    console.error('Error getting popular media:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -92,13 +108,13 @@ export const getSearchHistory = async (limit = 20) => {
     const response = await axios.get(`${config.apiUrl}/history`, {
       params: { limit },
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data.data;
   } catch (error) {
-    console.error('Error getting search history:', error);
+    console.error('Error getting search history:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -113,13 +129,13 @@ export const deleteSearchHistory = async (historyId) => {
   try {
     const response = await axios.delete(`${config.apiUrl}/history/${historyId}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data;
   } catch (error) {
-    console.error('Error deleting search history:', error);
+    console.error('Error deleting search history:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -133,13 +149,13 @@ export const clearSearchHistory = async () => {
   try {
     const response = await axios.delete(`${config.apiUrl}/history`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data;
   } catch (error) {
-    console.error('Error clearing search history:', error);
+    console.error('Error clearing search history:', error.response?.data || error.message);
     throw error;
   }
 };

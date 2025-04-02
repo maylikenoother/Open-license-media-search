@@ -3,6 +3,22 @@ import axios from 'axios';
 import config from '../config';
 
 /**
+ * Get authorization headers with token
+ * 
+ * @returns {Object} - Headers object with Authorization if token exists
+ */
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('clerk-token');
+  if (!token) {
+    console.warn('No auth token found. User may not be authenticated.');
+    return {};
+  }
+  return {
+    Authorization: `Bearer ${token}`
+  };
+};
+
+/**
  * Get all bookmarks for the current user
  * 
  * @returns {Promise} - Promise resolving to bookmarks
@@ -11,13 +27,13 @@ export const getBookmarks = async () => {
   try {
     const response = await axios.get(`${config.apiUrl}/users/bookmarks`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data.data;
   } catch (error) {
-    console.error('Error getting bookmarks:', error);
+    console.error('Error getting bookmarks:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -38,13 +54,13 @@ export const createBookmark = async (bookmarkData) => {
   try {
     const response = await axios.post(`${config.apiUrl}/users/bookmarks`, bookmarkData, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data.data;
   } catch (error) {
-    console.error('Error creating bookmark:', error);
+    console.error('Error creating bookmark:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -59,13 +75,13 @@ export const deleteBookmark = async (mediaId) => {
   try {
     const response = await axios.delete(`${config.apiUrl}/users/bookmarks/${mediaId}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('clerk-token')}`
+        ...getAuthHeaders()
       }
     });
     
     return response.data;
   } catch (error) {
-    console.error('Error deleting bookmark:', error);
+    console.error('Error deleting bookmark:', error.response?.data || error.message);
     throw error;
   }
 };

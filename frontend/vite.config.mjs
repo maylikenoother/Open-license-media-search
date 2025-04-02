@@ -7,12 +7,14 @@ export default defineConfig({
   plugins: [react(), pluginRewriteAll()],
   server: {
     port: 3000,
+    host: true,
     proxy: {
       // Proxy API requests to backend during development
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path, // Keep the /api prefix
       },
     },
   },
