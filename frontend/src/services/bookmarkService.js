@@ -1,22 +1,7 @@
 // src/services/bookmarkService.js
 import axios from 'axios';
 import config from '../config';
-
-/**
- * Get authorization headers with token
- * 
- * @returns {Object} - Headers object with Authorization if token exists
- */
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('clerk-token');
-  if (!token) {
-    console.warn('No auth token found. User may not be authenticated.');
-    return {};
-  }
-  return {
-    Authorization: `Bearer ${token}`
-  };
-};
+import { getAuthHeaders } from './authService';
 
 /**
  * Get all bookmarks for the current user
@@ -42,12 +27,6 @@ export const getBookmarks = async () => {
  * Create a new bookmark
  * 
  * @param {Object} bookmarkData - Data for the new bookmark
- * @param {string} bookmarkData.mediaId - The ID of the media item
- * @param {string} bookmarkData.mediaUrl - The URL of the media item
- * @param {string} bookmarkData.mediaType - The type of media
- * @param {string} [bookmarkData.mediaTitle] - The title of the media item
- * @param {string} [bookmarkData.mediaCreator] - The creator of the media item
- * @param {string} [bookmarkData.mediaLicense] - The license of the media item
  * @returns {Promise} - Promise resolving to the created bookmark
  */
 export const createBookmark = async (bookmarkData) => {

@@ -8,7 +8,7 @@ if (isDocker) {
   apiBaseUrl = import.meta.env.VITE_API_URL;
 } else if (isDevelopment) {
   // Local development
-  apiBaseUrl = '/api'; // This uses Vite's proxy
+  apiBaseUrl = '/api';
 } else {
   // Production
   apiBaseUrl = import.meta.env.VITE_API_URL || '/api';

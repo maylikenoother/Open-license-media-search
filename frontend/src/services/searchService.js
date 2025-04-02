@@ -1,22 +1,7 @@
 // src/services/searchService.js
 import axios from 'axios';
 import config from '../config';
-
-/**
- * Get authorization headers with token
- * 
- * @returns {Object} - Headers object with Authorization if token exists
- */
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('clerk-token');
-  if (!token) {
-    console.warn('No auth token found. User may not be authenticated.');
-    return {};
-  }
-  return {
-    Authorization: `Bearer ${token}`
-  };
-};
+import { getAuthHeaders } from './authService';
 
 /**
  * Search for media with the given parameters
@@ -48,28 +33,6 @@ export const searchMedia = async (query, params = {}) => {
     return response.data;
   } catch (error) {
     console.error('Error searching media:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-/**
- * Get details for a specific media item
- * 
- * @param {string} mediaId - The ID of the media item
- * @param {string} mediaType - The type of media (images, audio)
- * @returns {Promise} - Promise resolving to media details
- */
-export const getMediaDetails = async (mediaId, mediaType = 'images') => {
-  try {
-    const response = await axios.get(`${config.apiUrl}/media/${mediaType}/${mediaId}`, {
-      headers: {
-        ...getAuthHeaders()
-      }
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error getting media details:', error.response?.data || error.message);
     throw error;
   }
 };
