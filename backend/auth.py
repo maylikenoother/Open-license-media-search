@@ -7,10 +7,10 @@ from typing import Optional, Dict, Any
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
-from sqlalchemy.orm import Session
+from pymongo.database import Database
 from dotenv import load_dotenv
-from models import Users
 from database import get_db
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -107,7 +107,7 @@ async def extract_token_from_request(request: Request) -> Optional[str]:
 async def verify_clerk_token(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: Session = Depends(get_db)
+    db: Database = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Verify the Clerk JWT token and extract user information.
@@ -170,7 +170,9 @@ async def verify_clerk_token(
                 detail="Invalid user ID in token"
             )
         
-        user = db.query(Users).filter(Users.id == user_id).first()
+        # Check if user exists in MongoDB
+        users_collection = db.users
+        user = await users_collection.find_one({"id": user_id})
         
         # If user doesn't exist in our database, create them
         if not user and payload.get("email"):
@@ -178,13 +180,14 @@ async def verify_clerk_token(
             email = payload.get("email")
             
             logger.info(f"Creating new user: {username}, {email}")
-            user = Users(
-                id=user_id,
-                username=username,
-                email=email
-            )
-            db.add(user)
-            db.commit()
+            new_user = {
+                "id": user_id,
+                "username": username,
+                "email": email,
+                "created_at": datetime.now(),
+                "is_admin": False
+            }
+            await users_collection.insert_one(new_user)
         
         return payload
         
@@ -217,7 +220,7 @@ def get_current_user_id(payload: Dict[str, Any] = Depends(verify_clerk_token)) -
 # Optional dependency for endpoints that can work with or without authentication
 async def get_optional_current_user(
     request: Request,
-    db: Session = Depends(get_db)
+    db: Database = Depends(get_db)
 ) -> Optional[Dict[str, Any]]:
     """
     Try to get the current user, but don't require authentication.
@@ -251,3 +254,4 @@ async def get_optional_current_user(
         return payload
     except Exception:
         return None
+

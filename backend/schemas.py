@@ -2,6 +2,23 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from bson import ObjectId
+
+# Custom ObjectId field for MongoDB's document IDs
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid ObjectId")
+        return ObjectId(v)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, field_schema):
+        field_schema.update(type="string")
 
 # User Schemas
 class UserBase(BaseModel):
@@ -30,7 +47,7 @@ class SearchHistoryCreate(SearchHistoryBase):
     result_count: Optional[int] = None
 
 class SearchHistoryResponse(SearchHistoryBase):
-    id: int
+    id: str
     user_id: str
     result_count: Optional[int] = None
     created_at: datetime
@@ -51,7 +68,7 @@ class BookmarkCreate(BookmarkBase):
     user_id: str
 
 class BookmarkResponse(BookmarkBase):
-    id: int
+    id: str
     user_id: str
     created_at: datetime
 
@@ -69,7 +86,6 @@ class SearchRequest(BaseModel):
     tags: Optional[str] = None
     source: Optional[str] = None
 
-# API Response Schemas
 class StandardResponse(BaseModel):
     success: bool
     message: str

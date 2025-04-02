@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from routes import search, users
 from dotenv import load_dotenv
+from database import client as mongo_client
 
 # Load environment variables
 load_dotenv()
@@ -48,6 +49,11 @@ async def health_check():
         "api_version": "1.0.0",
         "environment": os.getenv("ENVIRONMENT", "development")
     }
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    """Close MongoDB connection when the app shuts down."""
+    mongo_client.close()
 
 if __name__ == "__main__":
     import uvicorn

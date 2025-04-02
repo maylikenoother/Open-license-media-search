@@ -1,55 +1,60 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, TIMESTAMP, JSON, Boolean
-from sqlalchemy.sql import func
-from sqlalchemy.ext.declarative import declarative_base
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List, Dict, Any
+from datetime import datetime
+from bson import ObjectId
 
-Base = declarative_base()
+# Custom ObjectId field for MongoDB's document IDs
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
 
-class Users(Base):
-    """
-    User model for storing user information.
-    The authentication is handled by Clerk, but we keep a record of users.
-    """
-    __tablename__ = "users"
-    
-    id = Column(String(255), primary_key=True, index=True)  # Clerk user ID
-    username = Column(String(50), unique=True, index=True, nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
-    is_admin = Column(Boolean, default=False)
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid ObjectId")
+        return ObjectId(v)
 
-class SearchHistory(Base):
-    """
-    Model for storing user search history.
-    """
-    __tablename__ = "search_history"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    search_query = Column(Text, nullable=False)
-    search_params = Column(JSON, nullable=True)  # Store additional search parameters
-    search_results = Column(JSON, nullable=True)  # Optional to store full results
-    result_count = Column(Integer, nullable=True)  # Number of results found
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    @classmethod
+    def __get_pydantic_json_schema__(cls, field_schema):
+        field_schema.update(type="string")
 
-class Bookmark(Base):
-    """
-    Model for storing user bookmarks.
-    """
-    __tablename__ = "bookmarks"
+# Base model with MongoDB ID handling
+class MongoBaseModel(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    media_id = Column(Text, nullable=False)
-    media_url = Column(Text, nullable=False)
-    media_type = Column(String(50), nullable=False)
-    media_title = Column(Text, nullable=True)
-    media_creator = Column(Text, nullable=True)
-    media_license = Column(String(50), nullable=True)
-    created_at = Column(TIMESTAMP, server_default=func.now())
-    
-    # Composite unique constraint to prevent duplicate bookmarks
-    __table_args__ = (
-        # Ensure user can't bookmark the same media item twice
-        {'sqlite_autoincrement': True},
-    )
+    class Config:
+        populate_by_name = True
+        json_encoders = {
+            ObjectId: str,
+            datetime: lambda dt: dt.isoformat()
+        }
+
+# User model
+class User(MongoBaseModel):
+    id: Optional[str] = Field(default=None)  # For Clerk user ID
+    username: str
+    email: EmailStr
+    created_at: datetime = Field(default_factory=datetime.now)
+    is_admin: bool = False
+
+# Search history model
+class SearchHistory(MongoBaseModel):
+    user_id: str
+    search_query: str
+    search_params: Optional[Dict[str, Any]] = None
+    search_results: Optional[Dict[str, Any]] = None
+    result_count: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+
+# Bookmark model
+class Bookmark(MongoBaseModel):
+    user_id: str
+    media_id: str
+    media_url: str
+    media_type: str
+    media_title: Optional[str] = None
+    media_creator: Optional[str] = None
+    media_license: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.now)

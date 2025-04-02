@@ -1,7 +1,8 @@
 # backend/repositories/user_repository.py
 from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
-from models import Users, Bookmark, SearchHistory
+from pymongo.database import Database
+from bson import ObjectId
+from datetime import datetime
 
 class UserRepository:
     """
@@ -9,114 +10,102 @@ class UserRepository:
     This class encapsulates all database interactions related to users.
     """
     
-    def __init__(self, db: Session):
+    def __init__(self, db: Database):
         self.db = db
+        self.users_collection = db.users
+        self.bookmarks_collection = db.bookmarks
+        self.search_history_collection = db.search_history
     
     # User methods
-    def get_user_by_id(self, user_id: str) -> Optional[Users]:
+    async def get_user_by_id(self, user_id: str) -> Optional[Dict]:
         """Get a user by their ID."""
-        return self.db.query(Users).filter(Users.id == user_id).first()
+        return await self.users_collection.find_one({"id": user_id})
     
-    def get_user_by_email(self, email: str) -> Optional[Users]:
+    async def get_user_by_email(self, email: str) -> Optional[Dict]:
         """Get a user by their email."""
-        return self.db.query(Users).filter(Users.email == email).first()
+        return await self.users_collection.find_one({"email": email})
     
-    def create_user(self, user_data: Dict[str, Any]) -> Users:
+    async def create_user(self, user_data: Dict[str, Any]) -> Dict:
         """Create a new user."""
-        user = Users(**user_data)
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        user_data["created_at"] = datetime.now()
+        result = await self.users_collection.insert_one(user_data)
+        return {**user_data, "_id": result.inserted_id}
     
-    def update_user(self, user_id: str, user_data: Dict[str, Any]) -> Optional[Users]:
+    async def update_user(self, user_id: str, user_data: Dict[str, Any]) -> Optional[Dict]:
         """Update an existing user."""
-        user = self.get_user_by_id(user_id)
+        user = await self.get_user_by_id(user_id)
         if not user:
             return None
         
-        for key, value in user_data.items():
-            setattr(user, key, value)
+        # Don't update the ID
+        if "_id" in user_data:
+            del user_data["_id"]
         
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        await self.users_collection.update_one(
+            {"id": user_id},
+            {"$set": user_data}
+        )
+        
+        return await self.get_user_by_id(user_id)
     
     # Bookmark methods
-    def get_bookmark_by_id(self, bookmark_id: int) -> Optional[Bookmark]:
+    async def get_bookmark_by_id(self, bookmark_id: str) -> Optional[Dict]:
         """Get a bookmark by its ID."""
-        return self.db.query(Bookmark).filter(Bookmark.id == bookmark_id).first()
+        return await self.bookmarks_collection.find_one({"_id": ObjectId(bookmark_id)})
     
-    def get_bookmark_by_user_and_media(self, user_id: str, media_id: str) -> Optional[Bookmark]:
+    async def get_bookmark_by_user_and_media(self, user_id: str, media_id: str) -> Optional[Dict]:
         """Get a user's bookmark for a specific media item."""
-        return self.db.query(Bookmark).filter(
-            Bookmark.user_id == user_id, 
-            Bookmark.media_id == media_id
-        ).first()
+        return await self.bookmarks_collection.find_one({
+            "user_id": user_id,
+            "media_id": media_id
+        })
     
-    def get_bookmarks_by_user(self, user_id: str) -> List[Bookmark]:
+    async def get_bookmarks_by_user(self, user_id: str) -> List[Dict]:
         """Get all bookmarks for a specific user."""
-        return self.db.query(Bookmark).filter(Bookmark.user_id == user_id).all()
+        cursor = self.bookmarks_collection.find({"user_id": user_id})
+        return await cursor.to_list(length=None)
     
-    def create_bookmark(self, bookmark_data: Dict[str, Any]) -> Bookmark:
+    async def create_bookmark(self, bookmark_data: Dict[str, Any]) -> Dict:
         """Create a new bookmark."""
-        bookmark = Bookmark(**bookmark_data)
-        self.db.add(bookmark)
-        self.db.commit()
-        self.db.refresh(bookmark)
-        return bookmark
+        bookmark_data["created_at"] = datetime.now()
+        result = await self.bookmarks_collection.insert_one(bookmark_data)
+        return {**bookmark_data, "_id": result.inserted_id}
     
-    def delete_bookmark(self, bookmark_id: int) -> bool:
+    async def delete_bookmark(self, bookmark_id: str) -> bool:
         """Delete a bookmark by its ID."""
-        bookmark = self.get_bookmark_by_id(bookmark_id)
-        if not bookmark:
-            return False
-        
-        self.db.delete(bookmark)
-        self.db.commit()
-        return True
+        result = await self.bookmarks_collection.delete_one({"_id": ObjectId(bookmark_id)})
+        return result.deleted_count > 0
     
-    def delete_bookmark_by_user_and_media(self, user_id: str, media_id: str) -> bool:
+    async def delete_bookmark_by_user_and_media(self, user_id: str, media_id: str) -> bool:
         """Delete a user's bookmark for a specific media item."""
-        bookmark = self.get_bookmark_by_user_and_media(user_id, media_id)
-        if not bookmark:
-            return False
-        
-        self.db.delete(bookmark)
-        self.db.commit()
-        return True
+        result = await self.bookmarks_collection.delete_one({
+            "user_id": user_id,
+            "media_id": media_id
+        })
+        return result.deleted_count > 0
     
     # Search history methods
-    def get_search_history_by_id(self, history_id: int) -> Optional[SearchHistory]:
+    async def get_search_history_by_id(self, history_id: str) -> Optional[Dict]:
         """Get a search history entry by its ID."""
-        return self.db.query(SearchHistory).filter(SearchHistory.id == history_id).first()
+        return await self.search_history_collection.find_one({"_id": ObjectId(history_id)})
     
-    def get_search_history_by_user(self, user_id: str, limit: int = 20) -> List[SearchHistory]:
+    async def get_search_history_by_user(self, user_id: str, limit: int = 20) -> List[Dict]:
         """Get search history for a specific user, newest first."""
-        return self.db.query(SearchHistory).filter(
-            SearchHistory.user_id == user_id
-        ).order_by(SearchHistory.created_at.desc()).limit(limit).all()
+        cursor = self.search_history_collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        return await cursor.to_list(length=None)
     
-    def create_search_history(self, history_data: Dict[str, Any]) -> SearchHistory:
+    async def create_search_history(self, history_data: Dict[str, Any]) -> Dict:
         """Create a new search history entry."""
-        history = SearchHistory(**history_data)
-        self.db.add(history)
-        self.db.commit()
-        self.db.refresh(history)
-        return history
+        history_data["created_at"] = datetime.now()
+        result = await self.search_history_collection.insert_one(history_data)
+        return {**history_data, "_id": result.inserted_id}
     
-    def delete_search_history(self, history_id: int) -> bool:
+    async def delete_search_history(self, history_id: str) -> bool:
         """Delete a search history entry by its ID."""
-        history = self.get_search_history_by_id(history_id)
-        if not history:
-            return False
-        
-        self.db.delete(history)
-        self.db.commit()
-        return True
+        result = await self.search_history_collection.delete_one({"_id": ObjectId(history_id)})
+        return result.deleted_count > 0
     
-    def clear_search_history(self, user_id: str) -> int:
+    async def clear_search_history(self, user_id: str) -> int:
         """Clear all search history for a specific user. Returns count of deleted entries."""
-        result = self.db.query(SearchHistory).filter(SearchHistory.user_id == user_id).delete()
-        self.db.commit()
-        return result
+        result = await self.search_history_collection.delete_many({"user_id": user_id})
+        return result.deleted_count

@@ -1,21 +1,19 @@
 services:
-  db:
-    image: postgres:16
+  mongodb:
+    image: mongo:6.0
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=maylikenoother
-      - POSTGRES_PASSWORD=123456789
-      - POSTGRES_DB=openlicensemediadb
+      - mongo_data:/data/db
     ports:
-      - "5432:5432"
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=openlicensemediadb
+    networks:
+      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U maylikenoother -d openlicensemediadb"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
 
   backend:
     build: 
@@ -26,15 +24,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://maylikenoother:123456789@db:5432/openlicensemediadb
+      - MONGODB_URL=mongodb://mongodb:27017/openlicensemediadb
       - OPENVERSE_API_URL=https://api.openverse.engineering/v1/
       - CLERK_JWT_ISSUER=${CLERK_JWT_ISSUER}
       - CLERK_JWT_JWKS_URL=${CLERK_JWT_JWKS_URL}
       - ENVIRONMENT=development
     depends_on:
-      db:
+      mongodb:
         condition: service_healthy
-    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - app-network
 
@@ -57,7 +55,7 @@ services:
       - app-network
 
 volumes:
-  postgres_data:
+  mongo_data:
 
 networks:
   app-network:

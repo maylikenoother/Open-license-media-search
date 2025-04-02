@@ -1,6 +1,6 @@
 # backend/routes/users.py
 from fastapi import APIRouter, Depends, HTTPException, status, Body
-from sqlalchemy.orm import Session
+from pymongo.database import Database
 from typing import Optional
 from database import get_db
 from services.user_service import UserService
@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get("/profile")
 async def get_user_profile(
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -22,7 +22,7 @@ async def get_user_profile(
         user_repository = UserRepository(db)
         user_service = UserService(user_repository)
         
-        profile = user_service.get_user_profile(user_id=user_id)
+        profile = await user_service.get_user_profile(user_id=user_id)
         
         return StandardResponse(
             success=True,
@@ -43,7 +43,7 @@ async def create_bookmark(
     media_title: Optional[str] = Body(None),
     media_creator: Optional[str] = Body(None),
     media_license: Optional[str] = Body(None),
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -53,7 +53,7 @@ async def create_bookmark(
         user_repository = UserRepository(db)
         user_service = UserService(user_repository)
         
-        bookmark = user_service.create_bookmark(
+        bookmark = await user_service.create_bookmark(
             user_id=user_id,
             media_id=media_id,
             media_url=media_url,
@@ -76,7 +76,7 @@ async def create_bookmark(
 
 @router.get("/bookmarks")
 async def get_bookmarks(
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -86,7 +86,7 @@ async def get_bookmarks(
         user_repository = UserRepository(db)
         user_service = UserService(user_repository)
         
-        bookmarks = user_service.get_bookmarks(user_id=user_id)
+        bookmarks = await user_service.get_bookmarks(user_id=user_id)
         
         return StandardResponse(
             success=True,
@@ -100,7 +100,7 @@ async def get_bookmarks(
 @router.delete("/bookmarks/{media_id}")
 async def delete_bookmark(
     media_id: str,
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -110,7 +110,7 @@ async def delete_bookmark(
         user_repository = UserRepository(db)
         user_service = UserService(user_repository)
         
-        result = user_service.delete_bookmark(user_id=user_id, media_id=media_id)
+        result = await user_service.delete_bookmark(user_id=user_id, media_id=media_id)
         
         return StandardResponse(
             success=True,

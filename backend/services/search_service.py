@@ -1,6 +1,7 @@
 # backend/services/search_service.py
 import os
 import requests
+import aiohttp
 from typing import Dict, Any, Optional, List
 from dotenv import load_dotenv
 
@@ -26,7 +27,7 @@ class SearchService:
             "cc0", "pdm", "by", "by-sa", "by-nc", "by-nd", "by-nc-sa", "by-nc-nd"
         ]
     
-    def search_media(
+    async def search_media(
         self, 
         query: str, 
         media_type: str = "images", 
@@ -88,41 +89,41 @@ class SearchService:
         if source:
             params["source"] = source
         
-        # Make the API request
+        # Make the API request using aiohttp
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=10)
-            
-            # Handle HTTP errors
-            if response.status_code != 200:
-                error_message = f"Openverse API error: {response.status_code}"
-                try:
-                    error_detail = response.json()
-                    error_message += f" - {error_detail.get('detail', '')}"
-                except:
-                    pass
-                raise Exception(error_message)
-            
-            # Parse and return the response
-            result = response.json()
-            
-            # Add metadata to help with UX
-            result["search_info"] = {
-                "query": query,
-                "media_type": media_type,
-                "page": page,
-                "page_size": page_size,
-                "license_type": license_type,
-                "creator": creator,
-                "tags": tags,
-                "source": source
-            }
-            
-            return result
-            
-        except requests.RequestException as e:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers, params=params, timeout=10) as response:
+                    # Handle HTTP errors
+                    if response.status != 200:
+                        error_message = f"Openverse API error: {response.status}"
+                        try:
+                            error_detail = await response.json()
+                            error_message += f" - {error_detail.get('detail', '')}"
+                        except:
+                            pass
+                        raise Exception(error_message)
+                    
+                    # Parse and return the response
+                    result = await response.json()
+                    
+                    # Add metadata to help with UX
+                    result["search_info"] = {
+                        "query": query,
+                        "media_type": media_type,
+                        "page": page,
+                        "page_size": page_size,
+                        "license_type": license_type,
+                        "creator": creator,
+                        "tags": tags,
+                        "source": source
+                    }
+                    
+                    return result
+                    
+        except aiohttp.ClientError as e:
             raise Exception(f"Failed to connect to Openverse API: {str(e)}")
     
-    def get_media_details(self, media_id: str, media_type: str = "images") -> Dict[str, Any]:
+    async def get_media_details(self, media_id: str, media_type: str = "images") -> Dict[str, Any]:
         """
         Get detailed information about a specific media item.
         
@@ -147,27 +148,27 @@ class SearchService:
         # Set up headers with API key if available
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         
-        # Make the API request
+        # Make the API request using aiohttp
         try:
-            response = requests.get(url, headers=headers, timeout=10)
-            
-            # Handle HTTP errors
-            if response.status_code != 200:
-                error_message = f"Openverse API error: {response.status_code}"
-                try:
-                    error_detail = response.json()
-                    error_message += f" - {error_detail.get('detail', '')}"
-                except:
-                    pass
-                raise Exception(error_message)
-            
-            # Parse and return the response
-            return response.json()
-            
-        except requests.RequestException as e:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers, timeout=10) as response:
+                    # Handle HTTP errors
+                    if response.status != 200:
+                        error_message = f"Openverse API error: {response.status}"
+                        try:
+                            error_detail = await response.json()
+                            error_message += f" - {error_detail.get('detail', '')}"
+                        except:
+                            pass
+                        raise Exception(error_message)
+                    
+                    # Parse and return the response
+                    return await response.json()
+                    
+        except aiohttp.ClientError as e:
             raise Exception(f"Failed to connect to Openverse API: {str(e)}")
     
-    def get_popular_media(self, media_type: str = "images", limit: int = 20) -> List[Dict[str, Any]]:
+    async def get_popular_media(self, media_type: str = "images", limit: int = 20) -> List[Dict[str, Any]]:
         """
         Get popular media from Openverse.
         This is a convenience method to help populate the homepage.
@@ -193,7 +194,7 @@ class SearchService:
             query = random.choice(popular_searches)
             
             # Search with it
-            result = self.search_media(
+            result = await self.search_media(
                 query=query,
                 media_type=media_type,
                 page=1,

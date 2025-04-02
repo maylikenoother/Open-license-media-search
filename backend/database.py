@@ -1,33 +1,35 @@
 # backend/database.py
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.database import Database
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Get database URL from environment variable
-DATABASE_URL = os.getenv("DATABASE_URL")
+MONGODB_URL = os.getenv("MONGODB_URL")
 
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
+if not MONGODB_URL:
+    raise ValueError("MONGODB_URL environment variable is not set")
 
-# Create SQLAlchemy engine and session
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# MongoDB client instance
+client = AsyncIOMotorClient(MONGODB_URL)
 
-Base = declarative_base()
+# Get database instance
+db = client.get_database("openlicensemediadb")
 
-# Dependency to get DB session
-def get_db():
+# Define collections
+users_collection = db.users
+search_history_collection = db.search_history
+bookmarks_collection = db.bookmarks
+
+# Dependency to get DB connection
+async def get_db():
     """
-    Dependency that yields a SQLAlchemy session.
-    This ensures the session is properly closed after use.
+    Dependency that yields a MongoDB connection.
     """
-    db = SessionLocal()
     try:
         yield db
-    finally:
-        db.close()
+    except Exception as e:
+        print(f"Database connection error: {e}")

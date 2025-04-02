@@ -1,6 +1,7 @@
 # backend/services/user_service.py
 from typing import List, Dict, Any, Optional
 from repositories.user_repository import UserRepository
+from bson import ObjectId
 
 class UserService:
     """
@@ -13,7 +14,7 @@ class UserService:
         self.user_repository = user_repository
     
     # User methods
-    def get_user_profile(self, user_id: str) -> Dict[str, Any]:
+    async def get_user_profile(self, user_id: str) -> Dict[str, Any]:
         """
         Get a user's profile information.
         
@@ -26,20 +27,24 @@ class UserService:
         Raises:
             ValueError: If user not found
         """
-        user = self.user_repository.get_user_by_id(user_id)
+        user = await self.user_repository.get_user_by_id(user_id)
         if not user:
             raise ValueError(f"User with ID {user_id} not found")
         
+        # Convert ObjectId to string for JSON serialization
+        if "_id" in user and isinstance(user["_id"], ObjectId):
+            user["_id"] = str(user["_id"])
+        
         return {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "created_at": user.created_at,
-            "is_admin": user.is_admin
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "email": user.get("email"),
+            "created_at": user.get("created_at"),
+            "is_admin": user.get("is_admin", False)
         }
     
     # Bookmark methods
-    def create_bookmark(self, 
+    async def create_bookmark(self, 
                        user_id: str, 
                        media_id: str, 
                        media_url: str, 
@@ -66,7 +71,7 @@ class UserService:
             ValueError: If bookmark already exists
         """
         # Check if bookmark already exists
-        existing = self.user_repository.get_bookmark_by_user_and_media(user_id, media_id)
+        existing = await self.user_repository.get_bookmark_by_user_and_media(user_id, media_id)
         if existing:
             raise ValueError(f"Media item {media_id} is already bookmarked")
         
@@ -81,20 +86,24 @@ class UserService:
             "media_license": media_license
         }
         
-        bookmark = self.user_repository.create_bookmark(bookmark_data)
+        bookmark = await self.user_repository.create_bookmark(bookmark_data)
+        
+        # Convert ObjectId to string for JSON serialization
+        if "_id" in bookmark and isinstance(bookmark["_id"], ObjectId):
+            bookmark["_id"] = str(bookmark["_id"])
         
         return {
-            "id": bookmark.id,
-            "media_id": bookmark.media_id,
-            "media_url": bookmark.media_url,
-            "media_type": bookmark.media_type,
-            "media_title": bookmark.media_title,
-            "media_creator": bookmark.media_creator,
-            "media_license": bookmark.media_license,
-            "created_at": bookmark.created_at
+            "id": bookmark.get("_id"),
+            "media_id": bookmark.get("media_id"),
+            "media_url": bookmark.get("media_url"),
+            "media_type": bookmark.get("media_type"),
+            "media_title": bookmark.get("media_title"),
+            "media_creator": bookmark.get("media_creator"),
+            "media_license": bookmark.get("media_license"),
+            "created_at": bookmark.get("created_at")
         }
     
-    def get_bookmarks(self, user_id: str) -> List[Dict[str, Any]]:
+    async def get_bookmarks(self, user_id: str) -> List[Dict[str, Any]]:
         """
         Get all bookmarks for a user.
         
@@ -104,23 +113,23 @@ class UserService:
         Returns:
             List of bookmark dictionaries
         """
-        bookmarks = self.user_repository.get_bookmarks_by_user(user_id)
+        bookmarks = await self.user_repository.get_bookmarks_by_user(user_id)
         
         return [
             {
-                "id": bookmark.id,
-                "media_id": bookmark.media_id,
-                "media_url": bookmark.media_url,
-                "media_type": bookmark.media_type,
-                "media_title": bookmark.media_title,
-                "media_creator": bookmark.media_creator,
-                "media_license": bookmark.media_license,
-                "created_at": bookmark.created_at
+                "id": str(bookmark.get("_id")),
+                "media_id": bookmark.get("media_id"),
+                "media_url": bookmark.get("media_url"),
+                "media_type": bookmark.get("media_type"),
+                "media_title": bookmark.get("media_title"),
+                "media_creator": bookmark.get("media_creator"),
+                "media_license": bookmark.get("media_license"),
+                "created_at": bookmark.get("created_at")
             }
             for bookmark in bookmarks
         ]
     
-    def delete_bookmark(self, user_id: str, media_id: str) -> Dict[str, Any]:
+    async def delete_bookmark(self, user_id: str, media_id: str) -> Dict[str, Any]:
         """
         Delete a bookmark.
         
@@ -134,7 +143,7 @@ class UserService:
         Raises:
             ValueError: If bookmark not found
         """
-        result = self.user_repository.delete_bookmark_by_user_and_media(user_id, media_id)
+        result = await self.user_repository.delete_bookmark_by_user_and_media(user_id, media_id)
         
         if not result:
             raise ValueError(f"Bookmark for media item {media_id} not found")
@@ -142,7 +151,7 @@ class UserService:
         return {"message": "Bookmark deleted successfully"}
     
     # Search history methods
-    def save_search_history(self, 
+    async def save_search_history(self, 
                           user_id: str, 
                           search_query: str, 
                           search_params: Optional[Dict[str, Any]] = None,
@@ -173,17 +182,21 @@ class UserService:
             "result_count": result_count
         }
         
-        history = self.user_repository.create_search_history(history_data)
+        history = await self.user_repository.create_search_history(history_data)
+        
+        # Convert ObjectId to string for JSON serialization
+        if "_id" in history and isinstance(history["_id"], ObjectId):
+            history["_id"] = str(history["_id"])
         
         return {
-            "id": history.id,
-            "search_query": history.search_query,
-            "search_params": history.search_params,
-            "result_count": history.result_count,
-            "created_at": history.created_at
+            "id": history.get("_id"),
+            "search_query": history.get("search_query"),
+            "search_params": history.get("search_params"),
+            "result_count": history.get("result_count"),
+            "created_at": history.get("created_at")
         }
     
-    def get_search_history(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+    async def get_search_history(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
         """
         Get search history for a user.
         
@@ -194,20 +207,20 @@ class UserService:
         Returns:
             List of search history dictionaries
         """
-        history_items = self.user_repository.get_search_history_by_user(user_id, limit)
+        history_items = await self.user_repository.get_search_history_by_user(user_id, limit)
         
         return [
             {
-                "id": item.id,
-                "search_query": item.search_query,
-                "search_params": item.search_params,
-                "result_count": item.result_count,
-                "created_at": item.created_at
+                "id": str(item.get("_id")),
+                "search_query": item.get("search_query"),
+                "search_params": item.get("search_params"),
+                "result_count": item.get("result_count"),
+                "created_at": item.get("created_at")
             }
             for item in history_items
         ]
     
-    def delete_search_history(self, user_id: str, history_id: int) -> Dict[str, Any]:
+    async def delete_search_history(self, user_id: str, history_id: str) -> Dict[str, Any]:
         """
         Delete a search history entry.
         
@@ -222,20 +235,20 @@ class UserService:
             ValueError: If history entry not found
         """
         # Verify the history entry belongs to the user
-        history = self.user_repository.get_search_history_by_id(history_id)
+        history = await self.user_repository.get_search_history_by_id(history_id)
         
-        if not history or history.user_id != user_id:
+        if not history or history.get("user_id") != user_id:
             raise ValueError(f"Search history entry {history_id} not found")
         
         # Delete the entry
-        result = self.user_repository.delete_search_history(history_id)
+        result = await self.user_repository.delete_search_history(history_id)
         
         if not result:
             raise ValueError(f"Failed to delete search history entry {history_id}")
         
         return {"message": "Search history entry deleted successfully"}
     
-    def clear_search_history(self, user_id: str) -> Dict[str, Any]:
+    async def clear_search_history(self, user_id: str) -> Dict[str, Any]:
         """
         Clear all search history for a user.
         
@@ -245,7 +258,7 @@ class UserService:
         Returns:
             Dict containing success message with count
         """
-        count = self.user_repository.clear_search_history(user_id)
+        count = await self.user_repository.clear_search_history(user_id)
         
         return {
             "message": f"Search history cleared successfully",

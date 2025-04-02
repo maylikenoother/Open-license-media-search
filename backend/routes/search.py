@@ -1,6 +1,6 @@
 # backend/routes/search.py
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from pymongo.database import Database
 from typing import Optional
 from database import get_db
 from services.search_service import SearchService
@@ -21,7 +21,7 @@ async def search_media(
     creator: Optional[str] = Query(None, description="Filter by creator"),
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
     source: Optional[str] = Query(None, description="Filter by source"),
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
     current_user: Optional[dict] = Depends(verify_clerk_token)
 ):
     """
@@ -34,7 +34,7 @@ async def search_media(
         search_service = SearchService()
         
         # Perform search
-        search_results = search_service.search_media(
+        search_results = await search_service.search_media(
             query=query,
             media_type=media_type,
             page=page,
@@ -63,7 +63,7 @@ async def search_media(
             }
             
             # We don't store the full results to save space
-            user_service.save_search_history(
+            await user_service.save_search_history(
                 user_id=user_id,
                 search_query=query,
                 search_params=search_params,
@@ -81,14 +81,14 @@ async def search_media(
 async def get_media_details(
     media_type: str,
     media_id: str,
-    db: Session = Depends(get_db)
+    db: Database = Depends(get_db)
 ):
     """
     Get detailed information about a specific media item.
     """
     try:
         search_service = SearchService()
-        media_details = search_service.get_media_details(
+        media_details = await search_service.get_media_details(
             media_id=media_id,
             media_type=media_type
         )
@@ -110,7 +110,7 @@ async def get_popular_media(
     """
     try:
         search_service = SearchService()
-        popular_media = search_service.get_popular_media(
+        popular_media = await search_service.get_popular_media(
             media_type=media_type,
             limit=limit
         )
@@ -125,7 +125,7 @@ async def get_popular_media(
 @router.get("/history")
 async def get_search_history(
     limit: int = Query(20, description="Maximum number of entries", ge=1, le=100),
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -135,7 +135,7 @@ async def get_search_history(
         user_repository = UserRepository(db)
         user_service = UserService(user_repository)
         
-        history = user_service.get_search_history(user_id=user_id, limit=limit)
+        history = await user_service.get_search_history(user_id=user_id, limit=limit)
         
         return StandardResponse(
             success=True,
@@ -150,8 +150,8 @@ async def get_search_history(
 
 @router.delete("/history/{history_id}")
 async def delete_search_history_entry(
-    history_id: int,
-    db: Session = Depends(get_db),
+    history_id: str,
+    db: Database = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -161,7 +161,7 @@ async def delete_search_history_entry(
         user_repository = UserRepository(db)
         user_service = UserService(user_repository)
         
-        result = user_service.delete_search_history(user_id=user_id, history_id=history_id)
+        result = await user_service.delete_search_history(user_id=user_id, history_id=history_id)
         
         return StandardResponse(
             success=True,
@@ -176,7 +176,7 @@ async def delete_search_history_entry(
 
 @router.delete("/history")
 async def clear_search_history(
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -186,7 +186,7 @@ async def clear_search_history(
         user_repository = UserRepository(db)
         user_service = UserService(user_repository)
         
-        result = user_service.clear_search_history(user_id=user_id)
+        result = await user_service.clear_search_history(user_id=user_id)
         
         return StandardResponse(
             success=True,
