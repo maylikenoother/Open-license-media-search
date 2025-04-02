@@ -22,7 +22,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "http://localhost:3000"], 
+    allow_origins=["*", "http://localhost:3000", "http://localhost:8000", "http://backend:8000", "http://frontend:3000"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,6 +54,10 @@ async def health_check():
 async def shutdown_db_client():
     """Close MongoDB connection when the app shuts down."""
     mongo_client.close()
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn

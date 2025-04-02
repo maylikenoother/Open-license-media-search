@@ -4,8 +4,9 @@ const isDocker = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.in
 
 let apiBaseUrl;
 if (isDocker) {
-  // Docker environment
-  apiBaseUrl = import.meta.env.VITE_API_URL;
+  // For browser requests, use the window location's hostname
+  const hostname = window.location.hostname;
+  apiBaseUrl = `http://${hostname}:8000/api`;
 } else if (isDevelopment) {
   // Local development
   apiBaseUrl = '/api';
