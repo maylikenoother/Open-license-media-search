@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+python-jose
+requests
+python-dotenv
+alembic
+pytest
+httpx
+pydantic
+pydantic-settings
+email-validator
+python-multipart
+libpq-dev
+python3-dev

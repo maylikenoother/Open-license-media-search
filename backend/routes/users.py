@@ -1,69 +1,124 @@
-
-from fastapi import APIRouter, Depends, HTTPException, status
+# backend/routes/users.py
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.models import Bookmark
-from backend.auth import verify_clerk_token
-from fastapi import Path
+from typing import Optional
+from database import get_db
+from services.user_service import UserService
+from repositories.user_repository import UserRepository
+from auth import verify_clerk_token, get_current_user_id
+from schemas import BookmarkCreate, BookmarkResponse, StandardResponse
 
 router = APIRouter()
 
-@router.post("/bookmarks")
-def create_bookmark(
-    media_id: str,
-    media_url: str,
-    media_type: str,
+@router.get("/profile")
+async def get_user_profile(
     db: Session = Depends(get_db),
-    user=Depends(verify_clerk_token)
+    user_id: str = Depends(get_current_user_id)
 ):
-    user_id = user["sub"]
-    existing = db.query(Bookmark).filter_by(user_id=user_id, media_id=media_id).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Already bookmarked")
+    """
+    Get the authenticated user's profile.
+    """
+    try:
+        user_repository = UserRepository(db)
+        user_service = UserService(user_repository)
+        
+        profile = user_service.get_user_profile(user_id=user_id)
+        
+        return StandardResponse(
+            success=True,
+            message="User profile retrieved successfully",
+            data=profile
+        )
+    
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-    bookmark = Bookmark(
-        user_id=user_id,
-        media_id=media_id,
-        media_url=media_url,
-        media_type=media_type
-    )
-    db.add(bookmark)
-    db.commit()
-    db.refresh(bookmark)
-    return {"message": "Bookmark saved", "bookmark": bookmark.id}
-
+@router.post("/bookmarks")
+async def create_bookmark(
+    media_id: str = Body(...),
+    media_url: str = Body(...),
+    media_type: str = Body(...),
+    media_title: Optional[str] = Body(None),
+    media_creator: Optional[str] = Body(None),
+    media_license: Optional[str] = Body(None),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Create a new bookmark for the authenticated user.
+    """
+    try:
+        user_repository = UserRepository(db)
+        user_service = UserService(user_repository)
+        
+        bookmark = user_service.create_bookmark(
+            user_id=user_id,
+            media_id=media_id,
+            media_url=media_url,
+            media_type=media_type,
+            media_title=media_title,
+            media_creator=media_creator,
+            media_license=media_license
+        )
+        
+        return StandardResponse(
+            success=True,
+            message="Bookmark created successfully",
+            data=bookmark
+        )
+    
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.get("/bookmarks")
-def get_bookmarks(
+async def get_bookmarks(
     db: Session = Depends(get_db),
-    user=Depends(verify_clerk_token)
+    user_id: str = Depends(get_current_user_id)
 ):
-    user_id = user["sub"]
-    bookmarks = db.query(Bookmark).filter_by(user_id=user_id).all()
-    return [ 
-        {
-            "id": b.id,
-            "media_id": b.media_id,
-            "media_url": b.media_url,
-            "media_type": b.media_type,
-            "created_at": b.created_at,
-        }
-        for b in bookmarks
-    ]
+    """
+    Get all bookmarks for the authenticated user.
+    """
+    try:
+        user_repository = UserRepository(db)
+        user_service = UserService(user_repository)
+        
+        bookmarks = user_service.get_bookmarks(user_id=user_id)
+        
+        return StandardResponse(
+            success=True,
+            message="Bookmarks retrieved successfully",
+            data=bookmarks
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.delete("/bookmarks/{media_id}")
-def delete_bookmark(
-    media_id: str = Path(..., description="The media ID to remove"),
+async def delete_bookmark(
+    media_id: str,
     db: Session = Depends(get_db),
-    user=Depends(verify_clerk_token)
+    user_id: str = Depends(get_current_user_id)
 ):
-    user_id = user["sub"]
-    bookmark = db.query(Bookmark).filter_by(user_id=user_id, media_id=media_id).first()
-
-    if not bookmark:
-        raise HTTPException(status_code=404, detail="Bookmark not found")
-
-    db.delete(bookmark)
-    db.commit()
-
-    return {"message": "Bookmark removed"}
+    """
+    Delete a bookmark for the authenticated user.
+    """
+    try:
+        user_repository = UserRepository(db)
+        user_service = UserService(user_repository)
+        
+        result = user_service.delete_bookmark(user_id=user_id, media_id=media_id)
+        
+        return StandardResponse(
+            success=True,
+            message=result["message"],
+            data=None
+        )
+    
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
