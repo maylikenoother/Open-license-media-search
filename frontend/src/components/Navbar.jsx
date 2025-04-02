@@ -24,7 +24,7 @@ import {
   History as HistoryIcon,
   Menu as MenuIcon
 } from '@mui/icons-material';
-import { UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
+import { UserButton, SignedIn, SignedOut, SignInButton as ClerkSignInButton } from '@clerk/clerk-react';
 import logo from '../assets/logo.svg';
 
 /**
@@ -112,11 +112,11 @@ const Navbar = () => {
           <UserButton />
         </SignedIn>
         <SignedOut>
-          <SignInButton mode="modal">
+          <ClerkSignInButton mode="modal">
             <Button variant="contained" color="primary" fullWidth>
               Sign In
             </Button>
-          </SignInButton>
+          </ClerkSignInButton>
         </SignedOut>
       </Box>
     </Box>
@@ -175,9 +175,9 @@ const Navbar = () => {
                   <UserButton />
                 </SignedIn>
                 <SignedOut>
-                  <SignInButton mode="modal">
+                  <ClerkSignInButton mode="modal">
                     <Button color="inherit">Sign In</Button>
-                  </SignInButton>
+                  </ClerkSignInButton>
                 </SignedOut>
               </Box>
             </>
