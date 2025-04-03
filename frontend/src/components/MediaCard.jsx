@@ -16,7 +16,8 @@ import {
   CircularProgress,
   Collapse,
   Divider,
-  Button
+  Button,
+  Alert
 } from '@mui/material';
 import {
   Bookmark as BookmarkIcon,
@@ -27,10 +28,12 @@ import {
   MusicNote as MusicNoteIcon,
   Download as DownloadIcon,
   Image as ImageIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Login as LoginIcon
 } from '@mui/icons-material';
 import { useMutation, useQueryClient } from 'react-query';
 import { createBookmark, deleteBookmark } from '../services/bookmarkService';
+import { useUser, SignInButton } from '@clerk/clerk-react';
 
 /**
  * MediaCard component
@@ -45,7 +48,9 @@ const MediaCard = ({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showAuthAlert, setShowAuthAlert] = useState(false);
   const queryClient = useQueryClient();
+  const { isSignedIn } = useUser();
   
   // Get item properties with fallbacks
   const {
@@ -100,12 +105,22 @@ const MediaCard = ({
         // Update bookmarks list
         queryClient.invalidateQueries('bookmarks');
         onBookmarkChange(id, !isBookmarked);
+      },
+      onError: (error) => {
+        // Show auth error if unauthenticated
+        if (error.response?.status === 401 || error.response?.status === 422) {
+          setShowAuthAlert(true);
+        }
       }
     }
   );
   
   // Toggle bookmark status
   const toggleBookmark = () => {
+    if (!isSignedIn) {
+      setShowAuthAlert(true);
+      return;
+    }
     bookmarkMutation.mutate();
   };
   
@@ -123,6 +138,7 @@ const MediaCard = ({
   const closeDialog = () => {
     setDialogOpen(false);
     setIsPlaying(false);
+    setShowAuthAlert(false);
   };
   
   // Toggle audio playback
@@ -345,6 +361,28 @@ const MediaCard = ({
         fullWidth
       >
         <DialogContent sx={{ p: 3 }}>
+          {/* Authentication Alert */}
+          {showAuthAlert && (
+            <Alert 
+              severity="info" 
+              action={
+                <SignInButton mode="modal">
+                  <Button 
+                    color="primary" 
+                    size="small" 
+                    variant="contained"
+                    startIcon={<LoginIcon />}
+                  >
+                    Sign In
+                  </Button>
+                </SignInButton>
+              }
+              sx={{ mb: 3 }}
+            >
+              Please sign in to bookmark media items.
+            </Alert>
+          )}
+          
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
             {/* Media preview */}
             <Box sx={{ flex: '1 1 60%' }}>

@@ -30,7 +30,13 @@ export const searchMedia = async (query, params = {}) => {
       }
     });
     
-    return response.data;
+    // Check if user is authenticated from response
+    const isAuthenticated = response.data.auth_status === 'authenticated';
+    
+    return {
+      ...response.data,
+      isAuthenticated
+    };
   } catch (error) {
     console.error('Error searching media:', error.response?.data || error.message);
     throw error;

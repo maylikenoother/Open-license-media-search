@@ -1,14 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import rewriteAll from "vite-plugin-rewrite-all";
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), rewriteAll()],
   server: {
     port: 3000,
     host: true,
     proxy: {
       "/api": {
-        target: "http://backend:8000", 
+        target: process.env.VITE_API_URL || "http://backend:8000",
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {
@@ -25,4 +27,19 @@ export default defineConfig({
       },
     },
   },
+  // Build configuration
+  build: {
+    outDir: "dist",
+    sourcemap: true,
+    // Configure rollup options
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          clerk: ['@clerk/clerk-react']
+        }
+      }
+    },
+  }
 });

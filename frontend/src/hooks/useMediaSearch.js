@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { searchMedia, getPopularMedia } from '../services/searchService';
+import { useUser } from '@clerk/clerk-react';
 
 /**
  * Custom hook for searching media
@@ -9,6 +10,7 @@ import { searchMedia, getPopularMedia } from '../services/searchService';
  */
 const useMediaSearch = () => {
   const queryClient = useQueryClient();
+  const { isSignedIn } = useUser();
   const [searchParams, setSearchParams] = useState({
     query: '',
     mediaType: 'images',
@@ -21,6 +23,7 @@ const useMediaSearch = () => {
   });
   
   const [searchPerformed, setSearchPerformed] = useState(false);
+  const [authError, setAuthError] = useState(false);
   
   // Query for popular media if no search has been performed
   const popularMediaQuery = useQuery(
@@ -38,7 +41,15 @@ const useMediaSearch = () => {
     () => searchMedia(searchParams.query, searchParams),
     {
       enabled: searchPerformed && !!searchParams.query,
-      keepPreviousData: true
+      keepPreviousData: true,
+      onSuccess: (data) => {
+        // Check if user is authenticated from the response
+        if (!data.isAuthenticated) {
+          setAuthError(true);
+        } else {
+          setAuthError(false);
+        }
+      }
     }
   );
   
@@ -48,6 +59,19 @@ const useMediaSearch = () => {
     {
       onSuccess: (data) => {
         queryClient.setQueryData(['searchResults', searchParams], data);
+        
+        // Check if user is authenticated from the response
+        if (!data.isAuthenticated) {
+          setAuthError(true);
+        } else {
+          setAuthError(false);
+        }
+      },
+      onError: (error) => {
+        // If the error is an authentication error, set the auth error flag
+        if (error.response?.status === 401 || error.response?.status === 422) {
+          setAuthError(true);
+        }
       }
     }
   );
@@ -57,6 +81,10 @@ const useMediaSearch = () => {
     const newParams = { ...searchParams, ...params, page: params.page || 1 };
     setSearchParams(newParams);
     setSearchPerformed(true);
+    
+    // Reset auth error state on new search
+    setAuthError(false);
+    
     return searchMutation.mutateAsync(newParams);
   }, [searchParams, searchMutation]);
   
@@ -73,6 +101,7 @@ const useMediaSearch = () => {
       source: ''
     });
     setSearchPerformed(false);
+    setAuthError(false);
     queryClient.invalidateQueries('popularMedia');
   }, [queryClient]);
   
@@ -102,7 +131,9 @@ const useMediaSearch = () => {
     performSearch,
     resetSearch,
     changePage,
-    changeMediaType
+    changeMediaType,
+    authError,
+    isAuthenticated: isSignedIn
   };
 };
 

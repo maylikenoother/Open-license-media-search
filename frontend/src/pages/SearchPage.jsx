@@ -14,14 +14,17 @@ import {
   Drawer,
   IconButton,
   Divider,
-  Fab
+  Fab,
+  Alert,
+  Button
 } from '@mui/material';
 import {
   Tune as TuneIcon,
   Close as CloseIcon,
-  FilterAlt as FilterAltIcon
+  FilterAlt as FilterAltIcon,
+  Login as LoginIcon
 } from '@mui/icons-material';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, SignInButton } from '@clerk/clerk-react';
 import SearchForm from '../components/SearchForm';
 import MediaGrid from '../components/MediaGrid';
 import SearchFilters from '../components/SearchFilters';
@@ -55,7 +58,9 @@ const SearchPage = () => {
     performSearch,
     resetSearch,
     changePage,
-    changeMediaType
+    changeMediaType,
+    authError,
+    isAuthenticated
   } = useMediaSearch();
   
   // Parse query parameters from URL
@@ -155,6 +160,28 @@ const SearchPage = () => {
   
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Authentication Alert */}
+      {authError && searchPerformed && (
+        <Alert 
+          severity="info" 
+          action={
+            <SignInButton mode="modal">
+              <Button 
+                color="primary" 
+                size="small" 
+                variant="contained"
+                startIcon={<LoginIcon />}
+              >
+                Sign In
+              </Button>
+            </SignInButton>
+          }
+          sx={{ mb: 3 }}
+        >
+          Please sign in to save your search history and bookmark media items.
+        </Alert>
+      )}
+      
       {/* Search form */}
       <SearchForm 
         onSearch={handleSearch} 

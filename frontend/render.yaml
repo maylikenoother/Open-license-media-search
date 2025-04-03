@@ -1,0 +1,18 @@
+# render.yaml
+services:
+  - type: web
+    name: openverse-search-frontend
+    env: static
+    buildCommand: cd frontend && ./build.sh
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_API_URL
+        value: https://openverse-api-backend.onrender.com/api
+      - key: VITE_RENDER
+        value: "true"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
