@@ -1,37 +1,33 @@
 # backend/tests/conftest.py
 import os
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+import asyncio
 from fastapi.testclient import TestClient
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.database import Database
 from main import app
-from database import get_db, Base
+from database import get_db
 
-# Create an in-memory SQLite database for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+# Use MongoDB Memory Server for testing
+MONGODB_TEST_URL = "mongodb://localhost:27017/test_database"
 
 @pytest.fixture(scope="function")
-def test_db():
-    """Create a fresh database for each test."""
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+async def test_db():
+    """Create a fresh MongoDB test database for each test."""
+    client = AsyncIOMotorClient(MONGODB_TEST_URL)
+    db = client.get_database()
     
-    # Create tables
-    Base.metadata.create_all(bind=engine)
+    # Clear existing collections
+    for collection in await db.list_collection_names():
+        await db[collection].delete_many({})
     
-    # Return a session
-    db = TestingSessionLocal()
     try:
         yield db
     finally:
-        db.close()
-        # Drop tables after test is done
-        Base.metadata.drop_all(bind=engine)
+        # Clean up after test
+        for collection in await db.list_collection_names():
+            await db[collection].delete_many({})
+        client.close()
 
 @pytest.fixture(scope="function")
 def client(test_db):
@@ -39,11 +35,8 @@ def client(test_db):
     Create a test client with the test database.
     This overrides the get_db dependency to use our test database.
     """
-    def override_get_db():
-        try:
-            yield test_db
-        finally:
-            pass
+    async def override_get_db():
+        yield test_db
     
     # Override the get_db dependency
     app.dependency_overrides[get_db] = override_get_db
@@ -60,8 +53,6 @@ def mock_verify_token():
     Mock the token verification to return a test user.
     Use this fixture to bypass authentication in tests.
     """
-    original_dependency = app.dependency_overrides.get(get_db, get_db)
-    
     def mock_token():
         return {
             "sub": "test_user_id",
@@ -69,10 +60,16 @@ def mock_verify_token():
             "username": "testuser"
         }
     
-    app.dependency_overrides[get_db] = original_dependency
     app.dependency_overrides["verify_clerk_token"] = mock_token
     
     yield
     
     if "verify_clerk_token" in app.dependency_overrides:
         del app.dependency_overrides["verify_clerk_token"]
+
+# Event loop fixture for running async tests
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
