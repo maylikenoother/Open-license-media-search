@@ -1,0 +1,50 @@
+# render.yaml
+services:
+  # Backend service
+  - type: web
+    name: openverse-api-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && python main.py
+    envVars:
+      - key: MONGODB_URL
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: CLERK_JWT_ISSUER
+        sync: false
+      - key: CLERK_JWT_JWKS_URL
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      - key: OPENVERSE_API_URL
+        value: https://api.openverse.engineering/v1/
+      - key: ALLOWED_ORIGINS
+        value: https://openverse-search-frontend.onrender.com
+      - key: FRONTEND_URL
+        value: https://openverse-search-frontend.onrender.com
+
+  # Frontend service
+  - type: web
+    name: openverse-search-frontend
+    env: static
+    buildCommand: cd frontend && chmod +x build.sh && ./build.sh
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_API_URL
+        value: https://openverse-api-backend.onrender.com/api
+      - key: VITE_RENDER
+        value: "true"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: mongodb
+    plan: free
+    databaseName: openlicensemediadb
+    ipAllowList: []

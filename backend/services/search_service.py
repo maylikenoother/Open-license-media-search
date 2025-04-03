@@ -1,11 +1,9 @@
-# backend/services/search_service.py
 import os
 import requests
 import aiohttp
 from typing import Dict, Any, Optional, List
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 class SearchService:
@@ -18,11 +16,9 @@ class SearchService:
         """Initialize the search service with API configuration."""
         self.api_url = os.getenv("OPENVERSE_API_URL", "https://api.openverse.engineering/v1/")
         self.api_key = os.getenv("OPENVERSE_API_KEY")
-        
-        # Media types supported by Openverse API
+
         self.supported_media_types = ["images", "audio"]
         
-        # License types supported by Openverse
         self.supported_licenses = [
             "cc0", "pdm", "by", "by-sa", "by-nc", "by-nd", "by-nc-sa", "by-nc-nd"
         ]
@@ -58,28 +54,22 @@ class SearchService:
             ValueError: If an invalid parameter is provided
             Exception: If the API request fails
         """
-        # Validate media type
         if media_type not in self.supported_media_types:
             raise ValueError(f"Invalid media type. Use one of {self.supported_media_types}")
         
-        # Validate license type if provided
         if license_type and license_type not in self.supported_licenses:
             raise ValueError(f"Invalid license type. Use one of {self.supported_licenses}")
-        
-        # Build API URL
+
         url = f"{self.api_url}{media_type}/"
         
-        # Set up headers with API key if available
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         
-        # Build query parameters
         params = {
             "q": query,
             "page": page,
             "page_size": page_size
         }
         
-        # Add optional filters if provided
         if license_type:
             params["license"] = license_type
         if creator:
@@ -89,11 +79,9 @@ class SearchService:
         if source:
             params["source"] = source
         
-        # Make the API request using aiohttp
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, params=params, timeout=10) as response:
-                    # Handle HTTP errors
                     if response.status != 200:
                         error_message = f"Openverse API error: {response.status}"
                         try:
@@ -103,10 +91,9 @@ class SearchService:
                             pass
                         raise Exception(error_message)
                     
-                    # Parse and return the response
+
                     result = await response.json()
-                    
-                    # Add metadata to help with UX
+
                     result["search_info"] = {
                         "query": query,
                         "media_type": media_type,
@@ -123,9 +110,9 @@ class SearchService:
         except aiohttp.ClientError as e:
             raise Exception(f"Failed to connect to Openverse API: {str(e)}")
     
-    async def get_media_details(self, media_id: str, media_type: str = "images") -> Dict[str, Any]:
+    async def get_media_details(saelf, media_id: str, media_type: str = "images") -> Dict[str, Any]:
         """
-        Get detailed information about a specific media item.
+        Get detailed information bout a specific media item.
         
         Args:
             media_id: The ID of the media item
@@ -138,21 +125,16 @@ class SearchService:
             ValueError: If an invalid parameter is provided
             Exception: If the API request fails
         """
-        # Validate media type
         if media_type not in self.supported_media_types:
             raise ValueError(f"Invalid media type. Use one of {self.supported_media_types}")
         
-        # Build API URL
         url = f"{self.api_url}{media_type}/{media_id}/"
         
-        # Set up headers with API key if available
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
-        
-        # Make the API request using aiohttp
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, timeout=10) as response:
-                    # Handle HTTP errors
                     if response.status != 200:
                         error_message = f"Openverse API error: {response.status}"
                         try:
@@ -161,8 +143,7 @@ class SearchService:
                         except:
                             pass
                         raise Exception(error_message)
-                    
-                    # Parse and return the response
+
                     return await response.json()
                     
         except aiohttp.ClientError as e:
@@ -184,16 +165,12 @@ class SearchService:
             ValueError: If an invalid parameter is provided
             Exception: If the API request fails
         """
-        # For now, let's implement this by searching for common terms
-        # In a real application, you might have a better way to determine popular content
         popular_searches = ["nature", "technology", "art", "music", "people"]
         
         try:
-            # Get a random popular search term
             import random
             query = random.choice(popular_searches)
             
-            # Search with it
             result = await self.search_media(
                 query=query,
                 media_type=media_type,

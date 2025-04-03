@@ -16,7 +16,6 @@ class UserRepository:
         self.bookmarks_collection = db.bookmarks
         self.search_history_collection = db.search_history
     
-    # User methods
     async def get_user_by_id(self, user_id: str) -> Optional[Dict]:
         """Get a user by their ID."""
         return await self.users_collection.find_one({"id": user_id})
@@ -36,8 +35,7 @@ class UserRepository:
         user = await self.get_user_by_id(user_id)
         if not user:
             return None
-        
-        # Don't update the ID
+
         if "_id" in user_data:
             del user_data["_id"]
         
@@ -48,7 +46,6 @@ class UserRepository:
         
         return await self.get_user_by_id(user_id)
     
-    # Bookmark methods
     async def get_bookmark_by_id(self, bookmark_id: str) -> Optional[Dict]:
         """Get a bookmark by its ID."""
         return await self.bookmarks_collection.find_one({"_id": ObjectId(bookmark_id)})
@@ -84,7 +81,6 @@ class UserRepository:
         })
         return result.deleted_count > 0
     
-    # Search history methods
     async def get_search_history_by_id(self, history_id: str) -> Optional[Dict]:
         """Get a search history entry by its ID."""
         return await self.search_history_collection.find_one({"_id": ObjectId(history_id)})

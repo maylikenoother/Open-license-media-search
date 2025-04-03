@@ -6,7 +6,7 @@ from database import get_db
 from services.search_service import SearchService
 from services.user_service import UserService
 from repositories.user_repository import UserRepository
-from auth import verify_clerk_token, get_current_user_id
+from auth import verify_clerk_token, get_current_user_id, get_optional_current_user
 from schemas import SearchRequest, StandardResponse
 
 router = APIRouter()
@@ -22,7 +22,7 @@ async def search_media(
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
     source: Optional[str] = Query(None, description="Filter by source"),
     db: Database = Depends(get_db),
-    current_user: Optional[dict] = Depends(verify_clerk_token)
+    current_user: Optional[dict] = Depends(get_optional_current_user)
 ):
     """
     Search for media using the Openverse API.
@@ -30,10 +30,8 @@ async def search_media(
     If the user is authenticated, their search query will be saved to their history.
     """
     try:
-        # Initialize services
         search_service = SearchService()
         
-        # Perform search
         search_results = await search_service.search_media(
             query=query,
             media_type=media_type,
@@ -45,13 +43,11 @@ async def search_media(
             source=source
         )
         
-        # Save to search history if user is authenticated
         if current_user and "sub" in current_user:
             user_id = current_user["sub"]
             user_repository = UserRepository(db)
             user_service = UserService(user_repository)
             
-            # Build search params object
             search_params = {
                 "media_type": media_type,
                 "page": page,
@@ -61,14 +57,16 @@ async def search_media(
                 "tags": tags,
                 "source": source
             }
-            
-            # We don't store the full results to save space
+
             await user_service.save_search_history(
                 user_id=user_id,
                 search_query=query,
                 search_params=search_params,
-                search_results=None  # Don't store the full results
+                search_results=None
             )
+    
+
+        search_results["auth_status"] = "authenticated" if current_user else "unauthenticated"
         
         return search_results
     

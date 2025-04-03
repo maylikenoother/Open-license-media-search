@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: openverse-api-backend
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && python main.py
+    envVars:
+      - key: MONGODB_URL
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: CLERK_JWT_ISSUER
+        sync: false
+      - key: CLERK_JWT_JWKS_URL
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      - key: OPENVERSE_API_URL
+        value: https://api.openverse.engineering/v1/
+      - key: FRONTEND_URL
+        sync: false
+
+databases:
+  - name: mongodb
+    databaseName: openlicensemediadb
+    ipAllowList: []
