@@ -2,7 +2,7 @@
 services:
   # Backend service
   - type: web
-    name: oml-search-api-backend
+    name: olm-search-backend
     env: python
     plan: free
     buildCommand: pip install -r backend/requirements.txt
@@ -21,12 +21,12 @@ services:
       - key: OPENVERSE_API_URL
         value: https://api.openverse.engineering/v1/
       - key: ALLOWED_ORIGINS
-        value: https://oml-search.onrender.com
+        value: https://olm-search.onrender.com
       - key: FRONTEND_URL
-        value: https://oml-search.onrender.com
+        value: https://olm-search.onrender.com
 
   - type: web
-    name: oml-search
+    name: olm-search
     env: static
     buildCommand: cd frontend && chmod +x build.sh && ./build.sh
     staticPublishPath: ./frontend/dist
@@ -34,7 +34,7 @@ services:
       - key: VITE_CLERK_PUBLISHABLE_KEY
         sync: false
       - key: VITE_API_URL
-        value: https://oml-search-api-backend.onrender.com/api
+        value: https://olm-search-backend.onrender.com/api
       - key: VITE_RENDER
         value: "true"
     routes:
