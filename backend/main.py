@@ -20,7 +20,7 @@ app = FastAPI(
 ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Local development
     "http://localhost:8000",
-    "https://olm-search.onrender.com"
+    "https://olm-search.onrender.com",
           # Local backend
     os.getenv("FRONTEND_URL", "https://olm-search.onrender.com"),
     os.getenv("ALLOWED_ORIGINS", "").split(",")
