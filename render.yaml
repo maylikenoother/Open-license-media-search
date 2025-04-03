@@ -9,7 +9,7 @@ services:
     startCommand: cd backend && python main.py
     envVars:
       - key: MONGODB_URL
-        value: mongodb+srv://maylikenoother1999:ogedengbe1999@cluster0.itt0evk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+        sync: false
       - key: CLERK_JWT_ISSUER
         sync: false
       - key: CLERK_JWT_JWKS_URL
@@ -23,6 +23,7 @@ services:
       - key: FRONTEND_URL
         value: https://olm-search.onrender.com
 
+  # Frontend service  
   - type: web
     name: olm-search
     env: static
@@ -39,16 +40,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-
-  # MongoDB service
-  - type: pserv
-    name: mongodb
-    env: docker
-    repo: https://github.com/render-examples/mongodb.git
-    envVars:
-      - key: MONGO_INITDB_DATABASE
-        value: openlicensemediadb
-    disk:
-      name: data
-      mountPath: /data/db
-      sizeGB: 3

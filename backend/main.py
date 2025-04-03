@@ -16,12 +16,16 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
-if os.getenv("RENDER_EXTERNAL_URL"):
-    ALLOWED_ORIGINS.append(os.getenv("RENDER_EXTERNAL_URL"))
+# Configure CORS
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Local development
+    "http://localhost:8000",  # Local backend
+    os.getenv("FRONTEND_URL", "https://olm-search.onrender.com"),
+    os.getenv("ALLOWED_ORIGINS", "").split(",")
+]
 
-    if os.getenv("FRONTEND_URL"):
-        ALLOWED_ORIGINS.append(os.getenv("FRONTEND_URL"))
+# Remove any empty strings from allowed origins
+ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,6 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
 app.include_router(search.router, prefix="/api", tags=["Search"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 
@@ -40,7 +45,8 @@ async def root():
     return {
         "name": "Open License Media Search API",
         "version": "1.0.0",
-        "status": "online"
+        "status": "online",
+        "environment": os.getenv("ENVIRONMENT", "production")
     }
 
 @app.get("/api/health")
