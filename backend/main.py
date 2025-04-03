@@ -24,8 +24,6 @@ ALLOWED_ORIGINS = [
     os.getenv("ALLOWED_ORIGINS", "").split(",")
 ]
 
-# Remove any empty strings from allowed origins
-ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
