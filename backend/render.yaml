@@ -1,13 +1,17 @@
+# render.yaml
 services:
+  # Backend service
   - type: web
-    name: oml-search-api-backend
+    name: olm-search-backend
     env: python
+    plan: free
     buildCommand: pip install -r backend/requirements.txt
     startCommand: cd backend && python main.py
     envVars:
       - key: MONGODB_URL
-        fromDatabase:
+        fromService:
           name: mongodb
+          type: mongodb
           property: connectionString
       - key: CLERK_JWT_ISSUER
         sync: false
@@ -17,10 +21,38 @@ services:
         value: production
       - key: OPENVERSE_API_URL
         value: https://api.openverse.engineering/v1/
+      - key: ALLOWED_ORIGINS
+        value: https://olm-search.onrender.com
       - key: FRONTEND_URL
-        sync: false
+        value: https://olm-search.onrender.com
 
-databases:
-  - name: mongodb
-    databaseName: openlicensemediadb
-    ipAllowList: []
+  # Frontend service  
+  - type: web
+    name: olm-search
+    env: static
+    buildCommand: cd frontend && chmod +x build.sh && ./build.sh
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_API_URL
+        value: https://olm-search-backend.onrender.com/api
+      - key: VITE_RENDER
+        value: "true"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # MongoDB service
+  - type: pserv
+    name: mongodb
+    env: docker
+    repo: https://github.com/render-examples/mongodb.git
+    envVars:
+      - key: MONGO_INITDB_DATABASE
+        value: openlicensemediadb
+    disk:
+      name: data
+      mountPath: /data/db
+      sizeGB: 10
