@@ -1,7 +1,7 @@
 # render.yaml
 services:
   - type: web
-    name: openverse-search-frontend
+    name: oml-search
     env: static
     buildCommand: cd frontend && ./build.sh
     staticPublishPath: ./frontend/dist
@@ -9,7 +9,7 @@ services:
       - key: VITE_CLERK_PUBLISHABLE_KEY
         sync: false
       - key: VITE_API_URL
-        value: https://openverse-api-backend.onrender.com/api
+        value: https://oml-search-api-backend.onrender.com/api
       - key: VITE_RENDER
         value: "true"
     routes:
