@@ -1,4 +1,3 @@
-// src/services/bookmarkService.js
 import axios from 'axios';
 import config from '../config';
 import { getAuthHeaders } from './authService';
@@ -31,7 +30,17 @@ export const getBookmarks = async () => {
  */
 export const createBookmark = async (bookmarkData) => {
   try {
-    const response = await axios.post(`${config.apiUrl}/users/bookmarks`, bookmarkData, {
+    // Extract the bookmark data with the right field names expected by the backend
+    const payload = {
+      media_id: bookmarkData.mediaId,
+      media_url: bookmarkData.mediaUrl,
+      media_type: bookmarkData.mediaType,
+      media_title: bookmarkData.mediaTitle,
+      media_creator: bookmarkData.mediaCreator,
+      media_license: bookmarkData.mediaLicense
+    };
+    
+    const response = await axios.post(`${config.apiUrl}/users/bookmarks`, payload, {
       headers: {
         ...getAuthHeaders()
       }
