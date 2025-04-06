@@ -1,0 +1,208 @@
+name: Open License Media Search CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+          
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy
+          pip install -r backend/requirements.txt
+          
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+          
+      - name: Lint backend with flake8
+        run: |
+          flake8 backend --count --select=E9,F63,F7,F82 --max-complexity=10 --max-line-length=127 --show-source --statistics
+          
+      - name: Check backend formatting with black
+        run: |
+          black --check --diff backend
+          
+      - name: Check import order with isort
+        run: |
+          isort --check-only --profile black backend
+          
+      - name: Static type checking with mypy
+        run: |
+          mypy backend
+          
+      - name: Lint frontend code
+        run: |
+          cd frontend
+          npx eslint src
+
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-asyncio
+          pip install -r backend/requirements.txt
+          
+      - name: Run tests with coverage
+        env:
+          MONGODB_URL: mongodb://localhost:27017/test_database
+          CLERK_JWT_ISSUER: ${{ secrets.CLERK_JWT_ISSUER || 'dummy_issuer' }}
+          CLERK_JWT_JWKS_URL: ${{ secrets.CLERK_JWT_JWKS_URL || 'https://example.com/.well-known/jwks.json' }}
+          OPENVERSE_API_URL: https://api.openverse.engineering/v1/
+        run: |
+          cd backend
+          pytest tests/ --cov=. --cov-report=xml --cov-report=term -v
+          
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+          
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+          
+      - name: Run tests with coverage
+        env:
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || 'dummy_key' }}
+          VITE_API_URL: /api
+        run: |
+          cd frontend
+          npm test -- --coverage
+          
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          fail_ci_if_error: false
+
+  build:
+    name: Build and Package
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: false
+          tags: olm-search-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+          
+      - name: Build frontend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: false
+          tags: olm-search-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+          
+      - name: Test containers
+        run: |
+          docker-compose -f docker-compose.yml up -d
+          sleep 10
+          curl -f http://localhost:8000/api/health || exit 1
+          docker-compose down
+
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    steps:
+      - name: Deploy Backend to Render
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.BACKEND_RENDER_DEPLOY_HOOK }}
+          method: 'POST'
+          
+      - name: Deploy Frontend to Render
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.FRONTEND_RENDER_DEPLOY_HOOK }}
+          method: 'POST'
+          
+      - name: Wait for Render Deployment
+        run: |
+          echo "Waiting for deployments to complete..."
+          sleep 120  # Give Render time to deploy both services
+          
+      - name: Verify Backend Deployment
+        run: |
+          curl -f https://olm-search-backend.onrender.com/api/health || echo "Backend verification failed but continuing"
+          
+      - name: Verify Frontend Deployment
+        run: |
+          curl -f https://olm-search.onrender.com || echo "Frontend verification failed but continuing"
