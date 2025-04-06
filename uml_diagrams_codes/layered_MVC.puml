@@ -1,0 +1,94 @@
+@startuml
+package "View Layer (React)" #LightBlue {
+    component [SearchPage] as VP1
+    component [BookmarksPage] as VP2
+    component [MediaCard] as VC1
+    component [SearchForm] as VC2
+    component [useMediaSearch] as VH1
+}
+
+package "Controller Layer (FastAPI)" #LightGreen {
+    component [SearchRouter] as CR1
+    component [UserRouter] as CR2
+    component [AuthHandler] as CR3
+    component [SearchService] as CS1
+    component [UserService] as CS2
+}
+
+package "Model Layer (MongoDB)" #LightPink {
+    component [UserRepository] as MR1
+    component [User] as MM1
+    component [SearchHistory] as MM2
+    component [Bookmark] as MM3
+    component [Database] as MD1
+    database "MongoDB" as MDB
+}
+
+' Connections between layers
+' View to Controller connections
+VP1 --> CR1 : API calls
+VP2 --> CR2 : API calls
+VC1 --> CR2 : Bookmark API calls
+VH1 --> CR1 : Search API calls
+VH1 --> CS1 : Indirect use
+
+' Controller to Model connections
+CR1 ..> CS1 : uses
+CR2 ..> CS2 : uses
+CS1 ..> MR1 : uses
+CS2 ..> MR1 : uses
+CR3 ..> MM1 : validates
+
+' Model internal connections
+MR1 --> MM1 : manages
+MR1 --> MM2 : manages
+MR1 --> MM3 : manages
+MR1 --> MD1 : uses
+MD1 --> MDB : connects
+
+' Data flow
+note top of VP1
+  User initiates search
+end note
+
+note right of VH1
+  Manages search state
+  and API interactions
+end note
+
+note right of CR1
+  Processes search requests and
+  returns media results
+end note
+
+note right of CS1
+  Interacts with Openverse API
+  and manages search history
+end note
+
+note right of MR1
+  Repository pattern implementation
+  for database operations
+end note
+
+note bottom of MDB
+  Stores users, bookmarks,
+  and search history
+end note
+
+' Key flows
+VP1 -[#blue]-> CR1 : "1. Search request"
+CR1 -[#blue]-> CS1 : "2. Process search"
+CS1 -[#blue]-> "Openverse API" : "3. External API call"
+CS1 -[#blue]-> MR1 : "4. Save search history"
+MR1 -[#blue]-> MM2 : "5. Create history record"
+MR1 -[#blue]-> MD1 : "6. Store in database"
+CR1 -[#blue]-> VP1 : "7. Return results"
+
+VP2 -[#red]-> CR2 : "A. Get bookmarks"
+CR2 -[#red]-> CS2 : "B. Process request"
+CS2 -[#red]-> MR1 : "C. Retrieve bookmarks"
+MR1 -[#red]-> MM3 : "D. Access bookmark data"
+MR1 -[#red]-> MD1 : "E. Query database"
+CR2 -[#red]-> VP2 : "F. Return bookmarks"
+@enduml

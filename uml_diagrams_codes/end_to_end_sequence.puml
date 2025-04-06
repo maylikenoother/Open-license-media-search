@@ -1,0 +1,101 @@
+@startuml End-to-End Application Flow
+
+actor "User" as User
+boundary "React Frontend" as Frontend
+control "React Services" as FrontendServices
+boundary "FastAPI Backend" as Backend
+control "Backend Services" as BackendServices
+control "Auth Handler" as AuthHandler
+entity "Repository Layer" as Repository
+database "MongoDB" as Database
+boundary "Openverse API" as OpenverseAPI
+
+== Authentication Flow ==
+
+User -> Frontend: Clicks "Sign In with Clerk"
+Frontend -> FrontendServices: Initiate auth process
+FrontendServices -> "Clerk Auth Service": Redirect to Clerk
+"Clerk Auth Service" -> User: Present login form
+User -> "Clerk Auth Service": Provide credentials
+"Clerk Auth Service" -> FrontendServices: Return JWT token
+FrontendServices -> Frontend: Store token in localStorage
+note right: Token stored for future requests
+
+== Media Search Flow ==
+
+User -> Frontend: Enter search query
+Frontend -> FrontendServices: Call search function
+FrontendServices -> Backend: GET /api/search?query=nature
+Backend -> AuthHandler: Validate JWT token
+AuthHandler -> AuthHandler: Extract user info
+Backend -> BackendServices: Call search service
+BackendServices -> OpenverseAPI: Forward search query
+OpenverseAPI -> BackendServices: Return search results
+BackendServices -> Repository: Save search history
+Repository -> Database: Insert search record
+BackendServices -> Backend: Return processed results
+Backend -> FrontendServices: Return HTTP response
+FrontendServices -> Frontend: Update UI with results
+Frontend -> User: Display search results
+
+== Bookmark Media Flow ==
+
+User -> Frontend: Click "Bookmark" on media item
+Frontend -> FrontendServices: Call bookmark service
+FrontendServices -> Backend: POST /api/users/bookmarks
+Backend -> AuthHandler: Validate JWT token
+AuthHandler -> AuthHandler: Extract user info
+Backend -> BackendServices: Call bookmark service
+BackendServices -> Repository: Create bookmark
+Repository -> Database: Insert bookmark record
+Repository --> BackendServices: Return success
+BackendServices --> Backend: Return response
+Backend --> FrontendServices: Return HTTP response
+FrontendServices -> Frontend: Update bookmark status
+Frontend -> User: Show bookmark confirmation
+
+== View Bookmarks Flow ==
+
+User -> Frontend: Navigate to Bookmarks page
+Frontend -> FrontendServices: Request bookmarks
+FrontendServices -> Backend: GET /api/users/bookmarks
+Backend -> AuthHandler: Validate JWT token
+AuthHandler -> AuthHandler: Extract user info
+Backend -> BackendServices: Call bookmark service
+BackendServices -> Repository: Get user bookmarks
+Repository -> Database: Query bookmarks
+Database -> Repository: Return bookmark records
+Repository -> BackendServices: Return bookmarks
+BackendServices -> Backend: Return processed bookmarks
+Backend -> FrontendServices: Return HTTP response
+FrontendServices -> Frontend: Update UI with bookmarks
+Frontend -> User: Display bookmarks
+
+== Search History Flow ==
+
+User -> Frontend: Navigate to History page
+Frontend -> FrontendServices: Request search history
+FrontendServices -> Backend: GET /api/history
+Backend -> AuthHandler: Validate JWT token
+AuthHandler -> AuthHandler: Extract user info
+Backend -> BackendServices: Call history service
+BackendServices -> Repository: Get user history
+Repository -> Database: Query history records
+Database -> Repository: Return history records
+Repository -> BackendServices: Return history data
+BackendServices -> Backend: Return processed history
+Backend -> FrontendServices: Return HTTP response
+FrontendServices -> Frontend: Update UI with history
+Frontend -> User: Display search history
+
+== Reuse Past Search Flow ==
+
+User -> Frontend: Click on past search
+Frontend -> FrontendServices: Load search parameters
+FrontendServices -> Frontend: Update search form
+Frontend -> User: Display search form with parameters
+User -> Frontend: Confirm search
+Frontend -> FrontendServices: Perform search with parameters
+note right: Continues with normal search flow
+
+@enduml

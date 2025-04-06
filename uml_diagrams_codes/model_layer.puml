@@ -1,0 +1,84 @@
+@startuml Model Layer Flow
+
+package "Model Layer" {
+    ' Data models
+    class User {
+        +id: String
+        +username: String
+        +email: String
+        +created_at: DateTime
+        +is_admin: Boolean
+    }
+    
+    class SearchHistory {
+        +id: ObjectId
+        +user_id: String
+        +search_query: String
+        +search_params: Dict
+        +search_results: Dict
+        +result_count: Integer
+        +created_at: DateTime
+    }
+    
+    class Bookmark {
+        +id: ObjectId
+        +user_id: String
+        +media_id: String
+        +media_url: String
+        +media_type: String
+        +media_title: String
+        +media_creator: String
+        +media_license: String
+        +created_at: DateTime
+    }
+    
+    ' Repositories
+    class UserRepository {
+        +get_user_by_id(user_id)
+        +get_user_by_email(email)
+        +create_user(user_data)
+        +update_user(user_id, user_data)
+        +get_bookmark_by_id(bookmark_id)
+        +get_bookmark_by_user_and_media(user_id, media_id)
+        +get_bookmarks_by_user(user_id)
+        +create_bookmark(bookmark_data)
+        +delete_bookmark(bookmark_id)
+        +delete_bookmark_by_user_and_media(user_id, media_id)
+        +get_search_history_by_id(history_id)
+        +get_search_history_by_user(user_id, limit)
+        +create_search_history(history_data)
+        +delete_search_history(history_id)
+        +clear_search_history(user_id)
+    }
+    
+    ' Database connection
+    class Database {
+        +client: MongoClient
+        +db: Database
+        +users_collection
+        +search_history_collection
+        +bookmarks_collection
+        +get_db(): Database
+    }
+    
+    ' Flow of data within the model layer
+    UserRepository --> User : "manages"
+    UserRepository --> SearchHistory : "manages"
+    UserRepository --> Bookmark : "manages"
+    UserRepository --> Database : "uses"
+    Database --> "MongoDB" : "connects to"
+    
+    note right of UserRepository
+        Repository pattern encapsulates
+        database operations and provides
+        a clean interface for services
+    end note
+    
+    note right of Database
+        Handles connection pooling
+        and provides database access
+        to repositories
+    end note
+}
+
+@enduml

@@ -1,0 +1,158 @@
+@startuml View Layer Flow
+
+package "View Layer (React)" {
+    ' Main app components
+    class App {
+        +Routes
+        +Theme configuration
+    }
+    
+    class ClerkProviderWrapper {
+        +Handle authentication
+        +Manage auth tokens
+    }
+    
+    ' Pages
+    class SearchPage {
+        +State: searchParams
+        +State: searchPerformed
+        +Hooks: useMediaSearch()
+        +handleSearch()
+        +handleFilterChange()
+        +handlePageChange()
+    }
+    
+    class BookmarksPage {
+        +State: filter
+        +State: mediaTypeFilter 
+        +State: sortBy
+        +Hooks: useQuery('bookmarks')
+        +handleFilterChange()
+        +handleMediaTypeFilterChange()
+        +handleSortChange()
+    }
+    
+    class SearchHistoryPage {
+        +handleSearchSelect()
+    }
+    
+    ' Components
+    class SearchForm {
+        +Props: onSearch
+        +Props: defaultValues
+        +Props: isLoading
+        +State: showAdvanced
+        +toggleAdvanced()
+        +handleReset()
+        +onSubmit()
+    }
+    
+    class SearchFilters {
+        +Props: activeFilters
+        +Props: onFilterChange
+        +Props: mediaType
+        +Props: onReset
+        +State: expanded
+        +handleLicenseChange()
+        +addTag()/removeTag()
+    }
+    
+    class MediaGrid {
+        +Props: media
+        +Props: isLoading
+        +Props: error
+        +Props: onPageChange
+        +State: bookmarkedMedia
+        +State: sortOrder
+        +handleBookmarkChange()
+        +handleSortChange()
+    }
+    
+    class MediaCard {
+        +Props: item
+        +Props: isBookmarked
+        +Props: onBookmarkChange
+        +State: detailsOpen
+        +State: dialogOpen
+        +toggleBookmark()
+        +toggleDetails()
+        +openDialog()
+    }
+    
+    class SearchHistory {
+        +Props: onSearchSelect
+        +Hooks: useQuery('searchHistory')
+        +handleSearchSelect()
+        +handleDelete()
+        +handleClearAll()
+    }
+    
+    ' Services
+    class SearchService {
+        +searchMedia()
+        +getPopularMedia()
+        +getSearchHistory()
+        +deleteSearchHistory() 
+        +clearSearchHistory()
+    }
+    
+    class BookmarkService {
+        +getBookmarks()
+        +createBookmark()
+        +deleteBookmark()
+        +isBookmarked()
+    }
+    
+    ' Custom hooks
+    class useMediaSearch {
+        +searchParams
+        +setSearchParams
+        +searchPerformed
+        +popularMedia/searchResults
+        +isLoading/isError/error
+        +performSearch()
+        +resetSearch()
+        +changePage()
+    }
+    
+    ' Component hierarchy
+    App --> SearchPage
+    App --> BookmarksPage
+    App --> SearchHistoryPage
+    
+    SearchPage --> SearchForm
+    SearchPage --> MediaGrid
+    SearchPage --> SearchFilters
+    SearchPage --> SearchHistory
+    
+    BookmarksPage --> MediaCard
+    
+    SearchHistoryPage --> SearchHistory
+    
+    MediaGrid --> MediaCard
+    
+    ' Data flow
+    SearchPage ..> useMediaSearch : "uses"
+    useMediaSearch ..> SearchService : "calls"
+    BookmarksPage ..> BookmarkService : "calls"
+    SearchHistoryPage ..> SearchService : "calls"
+    MediaCard ..> BookmarkService : "calls"
+    SearchHistory ..> SearchService : "calls"
+    
+    note right of useMediaSearch
+        Custom hook that encapsulates
+        all search-related state and logic
+    end note
+    
+    note right of App
+        Top-level component that
+        sets up routing and theme
+    end note
+    
+    note right of SearchPage
+        Main page with search functionality,
+        results display, and filters
+    end note
+}
+
+@enduml

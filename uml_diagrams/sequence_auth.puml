@@ -1,8 +1,0 @@
-@startuml
-User -> API: Make request to protected route
-API -> Security: Extract JWT token
-Security -> API: Validate token
-API -> Database: Check user authentication
-Database -> API: Return user details if valid
-API -> User: Grant access to requested resource
-@enduml

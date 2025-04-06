@@ -1,0 +1,70 @@
+@startuml
+package "Controller Layer (Routes)" {
+    ' Search routes controller
+    class SearchRouter {
+        +search_media(query, media_type, page, page_size, license_type, creator, tags, source)
+        +get_media_details(media_type, media_id)
+        +get_popular_media(media_type, limit)
+        +get_search_history(limit)
+        +delete_search_history_entry(history_id)
+        +clear_search_history()
+    }
+    
+    ' User routes controller
+    class UserRouter {
+        +get_user_profile()
+        +create_bookmark(media_id, media_url, media_type, media_title, media_creator, media_license)
+        +get_bookmarks()
+        +delete_bookmark(media_id)
+    }
+    
+    ' Authentication controller
+    class AuthHandler {
+        +verify_clerk_token(request, credentials)
+        +get_current_user_id(payload)
+        +get_optional_current_user(request)
+        +extract_token_from_request(request)
+    }
+    
+    ' Services used by controllers
+    class SearchService {
+        +search_media(query, media_type, page, page_size, license_type, creator, tags, source)
+        +get_media_details(media_id, media_type)
+        +get_popular_media(media_type, limit)
+    }
+    
+    class UserService {
+        +get_user_profile(user_id)
+        +create_bookmark(user_id, media_id, media_url, media_type, media_title, media_creator, media_license)
+        +get_bookmarks(user_id)
+        +delete_bookmark(user_id, media_id)
+        +save_search_history(user_id, search_query, search_params, search_results)
+        +get_search_history(user_id, limit)
+        +delete_search_history(user_id, history_id)
+        +clear_search_history(user_id)
+    }
+    
+    ' Request flow
+    SearchRouter ..> SearchService : "uses"
+    SearchRouter ..> UserService : "uses"
+    UserRouter ..> UserService : "uses"
+    SearchRouter ..> AuthHandler : "validates requests"
+    UserRouter ..> AuthHandler : "validates requests"
+    
+    note right of SearchRouter
+        Handles routing of search-related
+        API endpoints and delegates to services
+    end note
+    
+    note right of UserRouter
+        Handles user-related API endpoints
+        such as bookmarks and profile info
+    end note
+    
+    note right of AuthHandler
+        Handles authentication and
+        extracts user information
+        from JWT tokens
+    end note
+}
+@enduml
