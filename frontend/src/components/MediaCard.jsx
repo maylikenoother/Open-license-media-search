@@ -1,4 +1,3 @@
-// src/components/MediaCard.jsx
 import React, { useState } from 'react';
 import {
   Card,
@@ -35,10 +34,6 @@ import { useMutation, useQueryClient } from 'react-query';
 import { createBookmark, deleteBookmark } from '../services/bookmarkService';
 import { useUser, SignInButton } from '@clerk/clerk-react';
 
-/**
- * MediaCard component
- * Displays a media item (image or audio) with actions
- */
 const MediaCard = ({ 
   item, 
   isBookmarked = false, 
@@ -51,8 +46,7 @@ const MediaCard = ({
   const [showAuthAlert, setShowAuthAlert] = useState(false);
   const queryClient = useQueryClient();
   const { isSignedIn } = useUser();
-  
-  // Get item properties with fallbacks
+
   const {
     id,
     title = 'Untitled',
@@ -73,22 +67,18 @@ const MediaCard = ({
     waveform = ''
   } = item;
   
-  // Determine media type and URL
   const isAudio = item.hasOwnProperty('audio_url') || provider === 'audio';
   const mediaUrl = item.url || item.image_url || item.audio_url || thumbnail || foreign_landing_url;
   const mediaType = isAudio ? 'audio' : 'images';
   
-  // Format license display
   const licenseDisplay = license ? license.replace('cc-', '').toUpperCase() : 'Unknown License';
   
-  // Extract tags for display
   const displayTags = Array.isArray(tags) 
     ? tags.slice(0, 3) 
     : (typeof tags === 'object' && tags !== null) 
       ? Object.values(tags).slice(0, 3) 
       : [];
   
-  // Bookmark mutation
   const bookmarkMutation = useMutation(
     isBookmarked ? 
       () => deleteBookmark(id) : 
@@ -102,12 +92,10 @@ const MediaCard = ({
       }),
     {
       onSuccess: () => {
-        // Update bookmarks list
         queryClient.invalidateQueries('bookmarks');
         onBookmarkChange(id, !isBookmarked);
       },
       onError: (error) => {
-        // Show auth error if unauthenticated
         if (error.response?.status === 401 || error.response?.status === 422) {
           setShowAuthAlert(true);
         }
@@ -115,7 +103,6 @@ const MediaCard = ({
     }
   );
   
-  // Toggle bookmark status
   const toggleBookmark = () => {
     if (!isSignedIn) {
       setShowAuthAlert(true);
@@ -124,29 +111,24 @@ const MediaCard = ({
     bookmarkMutation.mutate();
   };
   
-  // Toggle details expansion
   const toggleDetails = () => {
     setDetailsOpen(!detailsOpen);
   };
   
-  // Open media dialog
   const openDialog = () => {
     setDialogOpen(true);
   };
   
-  // Close media dialog
   const closeDialog = () => {
     setDialogOpen(false);
     setIsPlaying(false);
     setShowAuthAlert(false);
   };
   
-  // Toggle audio playback
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
   };
   
-  // Get preview display
   const getPreview = () => {
     if (isAudio) {
       return (
@@ -212,10 +194,8 @@ const MediaCard = ({
           }
         }}
       >
-        {/* Preview */}
         {getPreview()}
-        
-        {/* Content */}
+
         <CardContent sx={{ flexGrow: 1, pb: 1 }}>
           <Typography 
             variant="h6" 
@@ -252,10 +232,8 @@ const MediaCard = ({
             </Link> • {provider}
           </Typography>
         </CardContent>
-        
-        {/* Actions */}
+
         <CardActions disableSpacing>
-          {/* Bookmark button */}
           <Tooltip title={isBookmarked ? "Remove bookmark" : "Add bookmark"}>
             <IconButton 
               onClick={toggleBookmark}
@@ -272,17 +250,14 @@ const MediaCard = ({
             </IconButton>
           </Tooltip>
           
-          {/* View details button */}
           <Tooltip title="View details">
             <IconButton onClick={openDialog}>
               <OpenInNewIcon />
             </IconButton>
           </Tooltip>
           
-          {/* Spacer */}
           <Box sx={{ flexGrow: 1 }} />
-          
-          {/* Show more details button */}
+
           {!showDetailedView && (
             <Tooltip title={detailsOpen ? "Hide details" : "Show details"}>
               <IconButton onClick={toggleDetails}>
@@ -292,12 +267,10 @@ const MediaCard = ({
           )}
         </CardActions>
         
-        {/* Expandable details */}
         {!showDetailedView && (
           <Collapse in={detailsOpen} timeout="auto" unmountOnExit>
             <Divider />
             <Box sx={{ p: 2 }}>
-              {/* Tags */}
               {displayTags.length > 0 && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -317,14 +290,12 @@ const MediaCard = ({
                 </Box>
               )}
               
-              {/* Audio specific details */}
               {isAudio && duration && (
                 <Typography variant="body2" color="text.secondary">
                   Duration: {duration}
                 </Typography>
               )}
               
-              {/* Links */}
               <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                 <Button 
                   size="small" 
@@ -352,8 +323,7 @@ const MediaCard = ({
           </Collapse>
         )}
       </Card>
-      
-      {/* Dialog for expanded view */}
+
       <Dialog
         open={dialogOpen}
         onClose={closeDialog}
@@ -361,7 +331,6 @@ const MediaCard = ({
         fullWidth
       >
         <DialogContent sx={{ p: 3 }}>
-          {/* Authentication Alert */}
           {showAuthAlert && (
             <Alert 
               severity="info" 
@@ -384,7 +353,6 @@ const MediaCard = ({
           )}
           
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
-            {/* Media preview */}
             <Box sx={{ flex: '1 1 60%' }}>
               {isAudio ? (
                 <Box 
@@ -437,7 +405,6 @@ const MediaCard = ({
               )}
             </Box>
             
-            {/* Media details */}
             <Box sx={{ flex: '1 1 40%' }}>
               <Typography variant="h5" component="h2" gutterBottom>
                 {title}
@@ -483,7 +450,6 @@ const MediaCard = ({
                 )}
               </Box>
               
-              {/* Tags */}
               {displayTags.length > 0 && (
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="body2" gutterBottom>
@@ -501,8 +467,7 @@ const MediaCard = ({
                   </Box>
                 </Box>
               )}
-              
-              {/* Actions */}
+            
               <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
                 <Button 
                   variant="contained" 

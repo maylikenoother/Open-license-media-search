@@ -1,4 +1,3 @@
-# backend/services/user_service.py
 from typing import List, Dict, Any, Optional
 from repositories.user_repository import UserRepository
 from bson import ObjectId
@@ -13,7 +12,6 @@ class UserService:
         """Initialize with a user repository instance."""
         self.user_repository = user_repository
     
-    # User methods
     async def get_user_profile(self, user_id: str) -> Dict[str, Any]:
         """
         Get a user's profile information.
@@ -31,7 +29,6 @@ class UserService:
         if not user:
             raise ValueError(f"User with ID {user_id} not found")
         
-        # Convert ObjectId to string for JSON serialization
         if "_id" in user and isinstance(user["_id"], ObjectId):
             user["_id"] = str(user["_id"])
         
@@ -42,8 +39,7 @@ class UserService:
             "created_at": user.get("created_at"),
             "is_admin": user.get("is_admin", False)
         }
-    
-    # Bookmark methods
+
     async def create_bookmark(self, 
                        user_id: str, 
                        media_id: str, 
@@ -70,12 +66,10 @@ class UserService:
         Raises:
             ValueError: If bookmark already exists
         """
-        # Check if bookmark already exists
         existing = await self.user_repository.get_bookmark_by_user_and_media(user_id, media_id)
         if existing:
             raise ValueError(f"Media item {media_id} is already bookmarked")
-        
-        # Create bookmark
+
         bookmark_data = {
             "user_id": user_id,
             "media_id": media_id,
@@ -88,7 +82,6 @@ class UserService:
         
         bookmark = await self.user_repository.create_bookmark(bookmark_data)
         
-        # Convert ObjectId to string for JSON serialization
         if "_id" in bookmark and isinstance(bookmark["_id"], ObjectId):
             bookmark["_id"] = str(bookmark["_id"])
         
@@ -150,7 +143,6 @@ class UserService:
         
         return {"message": "Bookmark deleted successfully"}
     
-    # Search history methods
     async def save_search_history(self, 
                           user_id: str, 
                           search_query: str, 
@@ -168,12 +160,10 @@ class UserService:
         Returns:
             Dict containing the created search history entry
         """
-        # Extract result count if results are provided
         result_count = None
         if search_results and "results" in search_results:
             result_count = len(search_results["results"])
         
-        # Create history entry
         history_data = {
             "user_id": user_id,
             "search_query": search_query,
@@ -183,8 +173,7 @@ class UserService:
         }
         
         history = await self.user_repository.create_search_history(history_data)
-        
-        # Convert ObjectId to string for JSON serialization
+
         if "_id" in history and isinstance(history["_id"], ObjectId):
             history["_id"] = str(history["_id"])
         
@@ -234,13 +223,11 @@ class UserService:
         Raises:
             ValueError: If history entry not found
         """
-        # Verify the history entry belongs to the user
         history = await self.user_repository.get_search_history_by_id(history_id)
         
         if not history or history.get("user_id") != user_id:
             raise ValueError(f"Search history entry {history_id} not found")
         
-        # Delete the entry
         result = await self.user_repository.delete_search_history(history_id)
         
         if not result:

@@ -1,4 +1,3 @@
-# backend/repositories/user_repository.py
 from typing import List, Optional, Dict, Any
 from pymongo.database import Database
 from bson import ObjectId

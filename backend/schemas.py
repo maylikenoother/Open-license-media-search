@@ -1,10 +1,8 @@
-# backend/schemas.py
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from bson import ObjectId
 
-# Custom ObjectId field for MongoDB's document IDs
 class PyObjectId(ObjectId):
     @classmethod
     def __get_validators__(cls):
@@ -19,15 +17,12 @@ class PyObjectId(ObjectId):
     @classmethod
     def __get_pydantic_json_schema__(cls, field_schema):
         field_schema.update(type="string")
-
-# User Schemas
 class UserBase(BaseModel):
     username: str
     email: EmailStr
 
 class UserCreate(UserBase):
-    id: str  # Clerk user ID
-
+    id: str
 class UserResponse(UserBase):
     id: str
     created_at: datetime
@@ -36,7 +31,6 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
-# Search History Schemas
 class SearchHistoryBase(BaseModel):
     search_query: str
     search_params: Optional[Dict[str, Any]] = None
@@ -55,7 +49,6 @@ class SearchHistoryResponse(SearchHistoryBase):
     class Config:
         from_attributes = True
 
-# Bookmark Schemas
 class BookmarkBase(BaseModel):
     media_id: str
     media_url: str
@@ -75,7 +68,6 @@ class BookmarkResponse(BookmarkBase):
     class Config:
         from_attributes = True
 
-# Search Request Schemas
 class SearchRequest(BaseModel):
     query: str
     media_type: str = "images"

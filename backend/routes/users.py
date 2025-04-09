@@ -1,4 +1,3 @@
-# backend/routes/users.py
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from pymongo.database import Database
 from typing import Optional

@@ -1,4 +1,3 @@
-# backend/auth.py
 import os
 import json
 import requests
@@ -12,24 +11,19 @@ from dotenv import load_dotenv
 from database import get_db
 from datetime import datetime
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
 load_dotenv()
 
-# Get Clerk configuration from environment variables
 CLERK_JWT_ISSUER = os.getenv("CLERK_JWT_ISSUER")
 CLERK_JWT_JWKS_URL = os.getenv("CLERK_JWT_JWKS_URL")
 
 if not CLERK_JWT_ISSUER or not CLERK_JWT_JWKS_URL:
     logger.warning("Clerk JWT configuration missing: CLERK_JWT_ISSUER or CLERK_JWT_JWKS_URL not set")
 
-# Initialize HTTP Bearer scheme for token extraction
 bearer_scheme = HTTPBearer(auto_error=False)
 
-# Cache for JWKS to avoid repeated requests
 _jwks_cache = None
 _jwks_cache_expiry = 0
 
@@ -43,17 +37,14 @@ def get_jwks():
     
     current_time = time.time()
     
-    # If we have a valid cache, return it
     if _jwks_cache and current_time < _jwks_cache_expiry:
         return _jwks_cache
     
-    # Otherwise, fetch new keys
     try:
         logger.info(f"Fetching JWKS from {CLERK_JWT_JWKS_URL}")
         response = requests.get(CLERK_JWT_JWKS_URL)
         response.raise_for_status()
         _jwks_cache = response.json()
-        # Cache for 1 hour
         _jwks_cache_expiry = current_time + 3600
         return _jwks_cache
     except Exception as e:
@@ -85,19 +76,16 @@ async def extract_token_from_request(request: Request) -> Optional[str]:
     3. X-Session-Token header
     4. clerk-token in cookies
     """
-    # Try Authorization header
     auth_header = request.headers.get("Authorization")
     if auth_header:
         if auth_header.startswith("Bearer "):
-            return auth_header[7:]  # Remove 'Bearer ' prefix
-        return auth_header  # Use header value as-is
+            return auth_header[7:] 
+        return auth_header 
     
-    # Try X-Session-Token header
     session_token = request.headers.get("X-Session-Token")
     if session_token:
         return session_token
     
-    # Try cookies
     cookies = request.cookies
     if cookies and "clerk-token" in cookies:
         return cookies["clerk-token"]
@@ -113,20 +101,16 @@ async def verify_clerk_token(
     Verify the Clerk JWT token and extract user information.
     Also ensures the user exists in our database.
     """
-    # Get token from multiple possible sources
     token = None
-    
-    # First try the standard HTTPBearer credentials
+
     if credentials:
         token = credentials.credentials
-    
-    # If not found, try other methods
+
     if not token:
         token = await extract_token_from_request(request)
     
     if not token:
         logger.warning("No auth token found in request")
-        # Log all headers to debug the issue
         logger.info(f"Request headers: {dict(request.headers)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -134,7 +118,6 @@ async def verify_clerk_token(
         )
     
     try:
-        # Extract the key ID from token header
         header = jwt.get_unverified_header(token)
         kid = header.get("kid")
         
@@ -145,10 +128,8 @@ async def verify_clerk_token(
                 detail="No key ID found in token"
             )
         
-        # Get the key with matching kid
         key = get_key_from_jwks(kid)
         
-        # Verify and decode the token
         payload = jwt.decode(
             token,
             key,
@@ -158,10 +139,8 @@ async def verify_clerk_token(
             options={"verify_aud": False}
         )
         
-        # Log successful token validation
         logger.info(f"Token validated successfully for user: {payload.get('sub')}")
         
-        # Check if user exists in our database, create if not
         user_id = payload.get("sub")
         if not user_id:
             logger.warning("Invalid user ID in token")
@@ -170,11 +149,9 @@ async def verify_clerk_token(
                 detail="Invalid user ID in token"
             )
         
-        # Check if user exists in MongoDB
         users_collection = db.users
         user = await users_collection.find_one({"id": user_id})
         
-        # If user doesn't exist in our database, create them
         if not user and payload.get("email"):
             username = payload.get("username", f"user_{user_id[:8]}")
             email = payload.get("email")
@@ -217,7 +194,6 @@ def get_current_user_id(payload: Dict[str, Any] = Depends(verify_clerk_token)) -
         )
     return user_id
 
-# Optional dependency for endpoints that can work with or without authentication
 async def get_optional_current_user(
     request: Request,
     db: Database = Depends(get_db)
@@ -231,17 +207,13 @@ async def get_optional_current_user(
         if not token:
             return None
         
-        # Extract the key ID from token header
         header = jwt.get_unverified_header(token)
         kid = header.get("kid")
         
         if not kid:
             return None
         
-        # Get the key with matching kid
         key = get_key_from_jwks(kid)
-        
-        # Verify and decode the token
         payload = jwt.decode(
             token,
             key,

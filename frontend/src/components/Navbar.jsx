@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import React from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { 
@@ -27,10 +26,6 @@ import {
 import { UserButton, SignedIn, SignedOut, SignInButton as ClerkSignInButton } from '@clerk/clerk-react';
 import logo from '../assets/logo.svg';
 
-/**
- * Navbar component
- * Main navigation bar for the application
- */
 const Navbar = () => {
   const location = useLocation();
   const theme = useTheme();
@@ -43,14 +38,12 @@ const Navbar = () => {
   
   const isActive = (path) => location.pathname === path;
   
-  // Navigation items
   const navItems = [
     { path: '/search', text: 'Search', icon: <SearchIcon /> },
     { path: '/bookmarks', text: 'Bookmarks', icon: <BookmarkIcon /> },
     { path: '/history', text: 'History', icon: <HistoryIcon /> }
   ];
   
-  // Desktop navigation menu
   const DesktopNav = () => (
     <Box display="flex" alignItems="center">
       {navItems.map((item) => (
@@ -76,7 +69,6 @@ const Navbar = () => {
     </Box>
   );
   
-  // Mobile navigation drawer content
   const DrawerContent = () => (
     <Box
       sx={{ width: 250 }}
@@ -126,7 +118,6 @@ const Navbar = () => {
     <AppBar position="sticky">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          {/* Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
             <img 
               src={logo} 
@@ -151,7 +142,6 @@ const Navbar = () => {
             </Typography>
           </Box>
           
-          {/* Hamburger menu for mobile */}
           {isMobile ? (
             <IconButton
               color="inherit"
@@ -164,12 +154,10 @@ const Navbar = () => {
             </IconButton>
           ) : (
             <>
-              {/* Navigation for desktop */}
               <Box sx={{ flexGrow: 1 }}>
                 <DesktopNav />
               </Box>
               
-              {/* User authentication */}
               <Box>
                 <SignedIn>
                   <UserButton />
@@ -183,7 +171,6 @@ const Navbar = () => {
             </>
           )}
           
-          {/* Mobile navigation drawer */}
           <Drawer
             anchor="left"
             open={drawerOpen}

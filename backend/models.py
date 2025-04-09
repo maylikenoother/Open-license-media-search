@@ -1,10 +1,8 @@
-# backend/models.py
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from bson import ObjectId
 
-# Custom ObjectId field for MongoDB's document IDs
 class PyObjectId(ObjectId):
     @classmethod
     def __get_validators__(cls):
@@ -20,7 +18,6 @@ class PyObjectId(ObjectId):
     def __get_pydantic_json_schema__(cls, field_schema):
         field_schema.update(type="string")
 
-# Base model with MongoDB ID handling
 class MongoBaseModel(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     
@@ -31,15 +28,13 @@ class MongoBaseModel(BaseModel):
             datetime: lambda dt: dt.isoformat()
         }
 
-# User model
 class User(MongoBaseModel):
-    id: Optional[str] = Field(default=None)  # For Clerk user ID
+    id: Optional[str] = Field(default=None)
     username: str
     email: EmailStr
     created_at: datetime = Field(default_factory=datetime.now)
     is_admin: bool = False
 
-# Search history model
 class SearchHistory(MongoBaseModel):
     user_id: str
     search_query: str
@@ -48,7 +43,6 @@ class SearchHistory(MongoBaseModel):
     result_count: Optional[int] = None
     created_at: datetime = Field(default_factory=datetime.now)
 
-# Bookmark model
 class Bookmark(MongoBaseModel):
     user_id: str
     media_id: str

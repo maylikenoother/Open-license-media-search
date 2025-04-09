@@ -16,12 +16,10 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
-# Configure CORS
 ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Local development
+    "http://localhost:3000",
     "http://localhost:8000",
     "https://olm-search.onrender.com",
-          # Local backend
     os.getenv("FRONTEND_URL", "https://olm-search.onrender.com"),
     os.getenv("ALLOWED_ORIGINS", "").split(",")
 ]
@@ -35,7 +33,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(search.router, prefix="/api", tags=["Search"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 

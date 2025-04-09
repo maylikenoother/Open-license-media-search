@@ -1,6 +1,4 @@
-# render.yaml
 services:
-  # Backend service
   - type: web
     name: olm-search-backend
     env: python
@@ -22,8 +20,7 @@ services:
         value: https://olm-search.onrender.com
       - key: FRONTEND_URL
         value: https://olm-search.onrender.com
-
-  # Frontend service  
+ 
   - type: web
     name: olm-search
     env: static

@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
@@ -7,17 +6,16 @@ import SearchPage from './pages/SearchPage';
 import BookmarksPage from './pages/BookmarksPage';
 import SearchHistoryPage from './pages/SearchHistoryPage';
 
-// Create a custom theme
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2', // Blue
+      main: '#1976d2',
       light: '#42a5f5',
       dark: '#1565c0',
       contrastText: '#fff',
     },
     secondary: {
-      main: '#ff9800', // Orange
+      main: '#ff9800',
       light: '#ffb74d',
       dark: '#f57c00',
       contrastText: '#000',
@@ -68,10 +66,6 @@ const theme = createTheme({
   },
 });
 
-/**
- * App component
- * Main application component that sets up routing and theme
- */
 function App() {
   return (
     <ThemeProvider theme={theme}>

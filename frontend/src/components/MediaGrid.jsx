@@ -1,4 +1,3 @@
-// src/components/MediaGrid.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   Grid, 
@@ -17,10 +16,7 @@ import { useQuery } from 'react-query';
 import MediaCard from './MediaCard';
 import { getBookmarks } from '../services/bookmarkService';
 
-/**
- * MediaGrid component
- * Displays a grid of media items with pagination
- */
+
 const MediaGrid = ({ 
   media, 
   isLoading = false, 
@@ -36,15 +32,13 @@ const MediaGrid = ({
   const [sortOrder, setSortOrder] = useState('relevance');
   const [displayItems, setDisplayItems] = useState([]);
   
-  // Fetch bookmarks to highlight already bookmarked items
   const { data: bookmarks } = useQuery(
     'bookmarks',
     getBookmarks,
     { 
-      staleTime: 60 * 1000, // 1 minute
+      staleTime: 60 * 1000, 
       refetchOnWindowFocus: false,
       onSuccess: (data) => {
-        // Create map of bookmarked media IDs
         const bookmarkMap = {};
         data.forEach(bookmark => {
           bookmarkMap[bookmark.media_id] = true;
@@ -53,18 +47,15 @@ const MediaGrid = ({
       }
     }
   );
-  
-  // Update displayed items when media or sort order changes
+
   useEffect(() => {
     if (!media || !Array.isArray(media)) {
       setDisplayItems([]);
       return;
     }
     
-    // Clone the array to avoid mutating props
     let items = [...media];
     
-    // Apply sorting
     if (sortOrder === 'title_asc') {
       items.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     } else if (sortOrder === 'title_desc') {
@@ -74,12 +65,10 @@ const MediaGrid = ({
     } else if (sortOrder === 'creator_desc') {
       items.sort((a, b) => (b.creator || '').localeCompare(a.creator || ''));
     }
-    // 'relevance' is the default sorting from the API
     
     setDisplayItems(items);
   }, [media, sortOrder]);
   
-  // Handle bookmark change
   const handleBookmarkChange = (mediaId, isBookmarked) => {
     setBookmarkedMedia(prev => ({
       ...prev,
@@ -87,12 +76,10 @@ const MediaGrid = ({
     }));
   };
   
-  // Handle sort change
   const handleSortChange = (event) => {
     setSortOrder(event.target.value);
   };
-  
-  // Show loading state
+
   if (isLoading) {
     return (
       <Box 
@@ -109,8 +96,7 @@ const MediaGrid = ({
       </Box>
     );
   }
-  
-  // Show error state
+
   if (error) {
     return (
       <Alert severity="error" sx={{ my: 2 }}>
@@ -119,7 +105,7 @@ const MediaGrid = ({
     );
   }
   
-  // Show empty state if no results
+
   if (!displayItems || displayItems.length === 0) {
     return (
       <Box 
@@ -145,7 +131,6 @@ const MediaGrid = ({
   
   return (
     <Box>
-      {/* Results info and sorting */}
       <Box 
         display="flex" 
         justifyContent="space-between" 
@@ -154,7 +139,6 @@ const MediaGrid = ({
         mb={3}
         gap={2}
       >
-        {/* Results count */}
         <Box>
           <Typography variant="body1" color="text.secondary">
             {totalResults ? (
@@ -173,7 +157,6 @@ const MediaGrid = ({
           </Typography>
         </Box>
         
-        {/* Sorting options */}
         <FormControl size="small" sx={{ minWidth: 200 }}>
           <InputLabel id="sort-select-label">Sort By</InputLabel>
           <Select
@@ -191,7 +174,6 @@ const MediaGrid = ({
         </FormControl>
       </Box>
       
-      {/* Media grid */}
       <Grid container spacing={3}>
         {displayItems.map((item) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
@@ -204,7 +186,6 @@ const MediaGrid = ({
         ))}
       </Grid>
       
-      {/* Pagination */}
       {totalPages > 1 && onPageChange && (
         <Box 
           display="flex" 

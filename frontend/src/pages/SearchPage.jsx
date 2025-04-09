@@ -1,4 +1,3 @@
-// src/pages/SearchPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -31,10 +30,6 @@ import SearchFilters from '../components/SearchFilters';
 import SearchHistory from '../components/SearchHistory';
 import useMediaSearch from '../hooks/useMediaSearch';
 
-/**
- * SearchPage component
- * Main page for searching media
- */
 const SearchPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -45,7 +40,6 @@ const SearchPage = () => {
   const navigate = useNavigate();
   const { isSignedIn, user } = useUser();
   
-  // Get search functionality from custom hook
   const { 
     searchParams,
     setSearchParams,
@@ -63,7 +57,6 @@ const SearchPage = () => {
     isAuthenticated
   } = useMediaSearch();
   
-  // Parse query parameters from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     
@@ -75,7 +68,6 @@ const SearchPage = () => {
     const tags = params.get('tags') || '';
     const source = params.get('source') || '';
     
-    // If there are query parameters, perform search
     if (query) {
       const newParams = {
         query,
@@ -90,9 +82,8 @@ const SearchPage = () => {
       setSearchParams(newParams);
       performSearch(newParams);
     }
-  }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.search]);
   
-  // Update URL with search parameters
   useEffect(() => {
     if (searchPerformed) {
       const params = new URLSearchParams();
@@ -109,38 +100,30 @@ const SearchPage = () => {
     }
   }, [searchParams, searchPerformed, navigate]);
   
-  // Handle search submission
   const handleSearch = (data) => {
     performSearch(data);
   };
   
-  // Handle filter changes
   const handleFilterChange = (filters) => {
     performSearch({ ...filters, page: 1 });
   };
-  
-  // Handle pagination
   const handlePageChange = (page) => {
     changePage(page);
   };
-  
-  // Handle tab change
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
   
-  // Handle search from history
   const handleSearchFromHistory = (searchData) => {
     performSearch(searchData);
-    setActiveTab(0); // Switch to results tab
+    setActiveTab(0); 
   };
   
-  // Toggle mobile filters drawer
   const toggleMobileFilters = () => {
     setMobileFiltersOpen(!mobileFiltersOpen);
   };
   
-  // Calculate result stats
   const getResultStats = () => {
     if (!searchResults) return {};
     
@@ -153,14 +136,12 @@ const SearchPage = () => {
   
   const { totalResults, totalPages, currentPage } = getResultStats();
   
-  // Media to display (search results or popular media)
   const mediaToDisplay = searchPerformed ? 
     (searchResults?.results || []) : 
     popularMedia;
   
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Authentication Alert */}
       {authError && searchPerformed && (
         <Alert 
           severity="info" 
@@ -182,16 +163,13 @@ const SearchPage = () => {
         </Alert>
       )}
       
-      {/* Search form */}
       <SearchForm 
         onSearch={handleSearch} 
         defaultValues={searchParams}
         isLoading={isLoading}
       />
       
-      {/* Main content */}
       <Grid container spacing={3}>
-        {/* Sidebar filters (desktop) */}
         {!isMobile && (
           <Grid item xs={12} md={3} lg={2}>
             <SearchFilters
@@ -203,9 +181,7 @@ const SearchPage = () => {
           </Grid>
         )}
         
-        {/* Main content area */}
         <Grid item xs={12} md={9} lg={10}>
-          {/* Tabs for results/history */}
           {isSignedIn && (
             <Paper sx={{ mb: 3 }}>
               <Tabs
@@ -218,8 +194,7 @@ const SearchPage = () => {
               </Tabs>
             </Paper>
           )}
-          
-          {/* Search Results Tab */}
+
           {(!isSignedIn || activeTab === 0) && (
             <Box>
               {searchPerformed && (
@@ -248,14 +223,12 @@ const SearchPage = () => {
             </Box>
           )}
           
-          {/* Search History Tab */}
           {isSignedIn && activeTab === 1 && (
             <SearchHistory onSearchSelect={handleSearchFromHistory} />
           )}
         </Grid>
       </Grid>
       
-      {/* Mobile filters button */}
       {isMobile && (
         <Fab
           color="primary"
@@ -267,7 +240,6 @@ const SearchPage = () => {
         </Fab>
       )}
       
-      {/* Mobile filters drawer */}
       <Drawer
         anchor="right"
         open={mobileFiltersOpen}

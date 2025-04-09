@@ -1,4 +1,3 @@
-// src/pages/SearchHistoryPage.jsx
 import React from 'react';
 import { Container, Typography, Box, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -6,17 +5,11 @@ import { History as HistoryIcon } from '@mui/icons-material';
 import { useUser } from '@clerk/clerk-react';
 import SearchHistory from '../components/SearchHistory';
 
-/**
- * SearchHistoryPage component
- * Page displaying user's search history
- */
 const SearchHistoryPage = () => {
   const { isSignedIn } = useUser();
   const navigate = useNavigate();
   
-  // Handle search selection
   const handleSearchSelect = (searchData) => {
-    // Build query parameters
     const params = new URLSearchParams();
     
     if (searchData.query) params.set('q', searchData.query);
@@ -26,11 +19,9 @@ const SearchHistoryPage = () => {
     if (searchData.tags) params.set('tags', searchData.tags);
     if (searchData.source) params.set('source', searchData.source);
     
-    // Navigate to search page with params
     navigate(`/search?${params.toString()}`);
   };
-  
-  // Show authentication message if not signed in
+
   if (!isSignedIn) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>

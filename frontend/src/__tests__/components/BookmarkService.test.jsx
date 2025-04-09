@@ -3,10 +3,8 @@ import axios from 'axios';
 import { searchMedia, getPopularMedia, getSearchHistory } from '../src/services/searchService';
 import config from '../src/config';
 
-// Mock axios
 vi.mock('axios');
 
-// Mock auth service
 vi.mock('../src/services/authService', () => ({
   getAuthHeaders: vi.fn(() => ({}))
 }));
@@ -14,7 +12,6 @@ vi.mock('../src/services/authService', () => ({
 describe('searchService', () => {
   describe('searchMedia', () => {
     it('should search for media with default parameters', async () => {
-      // Mock successful response
       const mockResponse = {
         data: {
           results: [{ id: '1', title: 'Test Media' }],
@@ -27,7 +24,6 @@ describe('searchService', () => {
 
       const result = await searchMedia('test query');
       
-      // Check axios was called with correct parameters
       expect(axios.get).toHaveBeenCalledWith(`${config.apiUrl}/search`, {
         params: {
           query: 'test query',
@@ -42,7 +38,6 @@ describe('searchService', () => {
         headers: expect.any(Object)
       });
 
-      // Check return value includes authentication status and results
       expect(result).toEqual({
         ...mockResponse.data,
         isAuthenticated: true

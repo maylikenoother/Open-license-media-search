@@ -1,4 +1,3 @@
-// src/components/SearchHistory.jsx
 import React from 'react';
 import {
   Box,
@@ -29,25 +28,19 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { getSearchHistory, deleteSearchHistory, clearSearchHistory } from '../services/searchService';
 import { formatDistanceToNow } from 'date-fns';
 
-/**
- * SearchHistory component
- * Displays user's search history with options to reuse or delete searches
- */
 const SearchHistory = ({ onSearchSelect }) => {
   const queryClient = useQueryClient();
   
-  // Fetch search history
   const { 
     data: history, 
     isLoading, 
     isError, 
     error 
   } = useQuery('searchHistory', getSearchHistory, {
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
     refetchOnWindowFocus: false
   });
   
-  // Mutation for deleting a history item
   const deleteMutation = useMutation(
     (historyId) => deleteSearchHistory(historyId),
     {
@@ -57,7 +50,6 @@ const SearchHistory = ({ onSearchSelect }) => {
     }
   );
   
-  // Mutation for clearing all history
   const clearMutation = useMutation(
     () => clearSearchHistory(),
     {
@@ -67,7 +59,6 @@ const SearchHistory = ({ onSearchSelect }) => {
     }
   );
   
-  // Handle history item selection
   const handleSearchSelect = (item) => {
     if (onSearchSelect) {
       const searchParams = item.search_params || {};
@@ -82,20 +73,17 @@ const SearchHistory = ({ onSearchSelect }) => {
     }
   };
   
-  // Handle history item deletion
   const handleDelete = (historyId, event) => {
     event.stopPropagation();
     deleteMutation.mutate(historyId);
   };
   
-  // Handle clear all history
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to clear all search history?')) {
       clearMutation.mutate();
     }
   };
   
-  // Format date for display
   const formatDate = (dateString) => {
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
@@ -104,7 +92,6 @@ const SearchHistory = ({ onSearchSelect }) => {
     }
   };
   
-  // Show loading state
   if (isLoading) {
     return (
       <Box 
@@ -117,7 +104,6 @@ const SearchHistory = ({ onSearchSelect }) => {
     );
   }
   
-  // Show error state
   if (isError) {
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
@@ -126,7 +112,6 @@ const SearchHistory = ({ onSearchSelect }) => {
     );
   }
   
-  // Show empty state
   if (!history || history.length === 0) {
     return (
       <Paper elevation={0} sx={{ p: 3, borderRadius: 2, backgroundColor: '#f5f5f5' }}>
@@ -197,7 +182,6 @@ const SearchHistory = ({ onSearchSelect }) => {
                 primary={item.search_query}
                 secondary={
                   <Box sx={{ mt: 0.5 }}>
-                    {/* Results count */}
                     {item.result_count !== null && (
                       <Chip
                         label={`${item.result_count} results`}
@@ -206,7 +190,6 @@ const SearchHistory = ({ onSearchSelect }) => {
                       />
                     )}
                     
-                    {/* Media type */}
                     {item.search_params?.media_type && (
                       <Chip
                         label={item.search_params.media_type}
@@ -217,7 +200,6 @@ const SearchHistory = ({ onSearchSelect }) => {
                       />
                     )}
                     
-                    {/* License type */}
                     {item.search_params?.license_type && (
                       <Chip
                         label={`License: ${item.search_params.license_type}`}
@@ -226,7 +208,6 @@ const SearchHistory = ({ onSearchSelect }) => {
                       />
                     )}
                     
-                    {/* Date */}
                     <Typography 
                       component="span" 
                       variant="caption" 

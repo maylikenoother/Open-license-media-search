@@ -1,4 +1,3 @@
-# backend/routes/search.py
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pymongo.database import Database
 from typing import Optional

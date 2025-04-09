@@ -1,39 +1,9 @@
-// src/services/authService.js
 
 /**
  * Get authorization headers with token
  * 
- * @returns {Object} - Headers object with Authorization
- */
-export const getAuthHeaders = () => {
-    const token = localStorage.getItem('clerk-token');
-    
-    // Debug output
-    console.log("getAuthHeaders called, token exists:", !!token);
-    
-    if (!token) {
-      console.warn('No auth token found in localStorage. User may not be authenticated.');
-      
-      // Try to get token from cookie as fallback
-      const tokenFromCookie = getCookie('clerk-token');
-      if (tokenFromCookie) {
-        console.log("Found token in cookies, using that instead");
-        return {
-          'Authorization': `Bearer ${tokenFromCookie}`,
-          'X-Session-Token': tokenFromCookie
-        };
-      }
-      
-      return {};
-    }
-    
-    console.log("Sending auth headers with token:", token.substring(0, 10) + "...");
-    
-    return {
-      'Authorization': `Bearer ${token}`,
-      'X-Session-Token': token  // Adding a backup header method
-    };
-  };
+ @returns {Object}
+
   
   /**
    * Helper function to get cookie by name
@@ -45,10 +15,7 @@ export const getAuthHeaders = () => {
     return null;
   }
   
-  /**
-   * Custom hook to manage auth token
-   * This hook will update the token in localStorage whenever it changes
-   */
+ 
   export const useAuthToken = () => {
     const { getToken, isSignedIn } = useAuth();
     const [token, setToken] = useState(localStorage.getItem('clerk-token') || '');
@@ -67,7 +34,6 @@ export const getAuthHeaders = () => {
               console.log("Authentication token updated");
             }
           } else {
-            // Clear token if not signed in
             localStorage.removeItem('clerk-token');
             document.cookie = "clerk-token=; path=/; max-age=0";
             setToken('');
@@ -80,9 +46,8 @@ export const getAuthHeaders = () => {
       };
       
       updateToken();
-      
-      // Set up interval to refresh token
-      const intervalId = setInterval(updateToken, 5 * 60 * 1000); // Refresh every 5 minutes
+
+      const intervalId = setInterval(updateToken, 5 * 60 * 1000);
       
       return () => clearInterval(intervalId);
     }, [getToken, isSignedIn]);
@@ -91,16 +56,14 @@ export const getAuthHeaders = () => {
   };
   
   /**
-   * Parse JWT token to get payload
    * 
-   * @param {string} token - JWT token
-   * @returns {Object|null} - Token payload or null if invalid
+   * @param {string} token 
+   * @returns {Object|null} 
    */
   export const parseToken = (token) => {
     if (!token) return null;
     
     try {
-      // Get the payload part of the JWT (second segment)
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(

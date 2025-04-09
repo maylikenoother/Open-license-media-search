@@ -1,4 +1,3 @@
-// src/components/SearchFilters.jsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -27,10 +26,6 @@ import {
   Search as SearchIcon
 } from '@mui/icons-material';
 
-/**
- * SearchFilters component
- * Sidebar filters for refining search results
- */
 const SearchFilters = ({ 
   activeFilters = {}, 
   onFilterChange, 
@@ -40,7 +35,6 @@ const SearchFilters = ({
   const [expanded, setExpanded] = useState(['license', 'source']);
   const [tagInput, setTagInput] = useState('');
   
-  // Handle accordion expansion
   const handleAccordionToggle = (panel) => (event, isExpanded) => {
     setExpanded(prev => 
       isExpanded 
@@ -49,7 +43,6 @@ const SearchFilters = ({
     );
   };
   
-  // Handle filter changes
   const handleFilterChange = (filterType, value) => {
     onFilterChange({
       ...activeFilters,
@@ -57,17 +50,14 @@ const SearchFilters = ({
     });
   };
   
-  // Handle license type change
   const handleLicenseChange = (event) => {
     handleFilterChange('licenseType', event.target.value);
   };
   
-  // Handle tag input
   const handleTagInputChange = (event) => {
     setTagInput(event.target.value);
   };
   
-  // Add a tag
   const addTag = () => {
     if (!tagInput.trim()) return;
     
@@ -81,8 +71,7 @@ const SearchFilters = ({
     
     setTagInput('');
   };
-  
-  // Remove a tag
+  g
   const removeTag = (tagToRemove) => {
     const currentTags = activeFilters.tags || '';
     const tagsArray = currentTags.split(',');
@@ -91,7 +80,6 @@ const SearchFilters = ({
     handleFilterChange('tags', newTags || '');
   };
   
-  // Handle enter key in tag input
   const handleTagKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -99,18 +87,15 @@ const SearchFilters = ({
     }
   };
   
-  // Get active tags as array
   const getActiveTags = () => {
     const tags = activeFilters.tags || '';
     return tags ? tags.split(',').filter(tag => tag.trim()) : [];
   };
   
-  // Reset all filters
   const handleResetFilters = () => {
     onReset();
   };
   
-  // Check if any filters are active
   const hasActiveFilters = Object.values(activeFilters).some(value => value && value !== '');
   
   return (
@@ -139,7 +124,6 @@ const SearchFilters = ({
         )}
       </Box>
       
-      {/* Media Type */}
       <Accordion
         expanded={expanded.includes('mediaType')}
         onChange={handleAccordionToggle('mediaType')}
@@ -167,7 +151,6 @@ const SearchFilters = ({
         </AccordionDetails>
       </Accordion>
       
-      {/* License Type */}
       <Accordion
         expanded={expanded.includes('license')}
         onChange={handleAccordionToggle('license')}
@@ -202,7 +185,6 @@ const SearchFilters = ({
         </AccordionDetails>
       </Accordion>
       
-      {/* Source */}
       <Accordion
         expanded={expanded.includes('source')}
         onChange={handleAccordionToggle('source')}
@@ -280,7 +262,6 @@ const SearchFilters = ({
         </AccordionDetails>
       </Accordion>
       
-      {/* Creator */}
       <Accordion
         expanded={expanded.includes('creator')}
         onChange={handleAccordionToggle('creator')}
@@ -308,7 +289,6 @@ const SearchFilters = ({
         </AccordionDetails>
       </Accordion>
       
-      {/* Tags */}
       <Accordion
         expanded={expanded.includes('tags')}
         onChange={handleAccordionToggle('tags')}

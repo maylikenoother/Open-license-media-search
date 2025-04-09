@@ -30,7 +30,6 @@ export const getBookmarks = async () => {
  */
 export const createBookmark = async (bookmarkData) => {
   try {
-    // Extract the bookmark data with the right field names expected by the backend
     const payload = {
       media_id: bookmarkData.mediaId,
       media_url: bookmarkData.mediaUrl,

@@ -1,4 +1,3 @@
-// src/components/SearchForm.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   Paper, 
@@ -23,14 +22,9 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 
-/**
- * SearchForm component
- * Form for searching media with advanced options
- */
 const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   
-  // Initialize form with react-hook-form
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
       query: '',
@@ -43,7 +37,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
     }
   });
   
-  // Update form values when defaultValues change
   useEffect(() => {
     if (defaultValues) {
       Object.entries(defaultValues).forEach(([key, value]) => {
@@ -52,15 +45,12 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
     }
   }, [defaultValues, setValue]);
   
-  // Watch media type to update UI
   const mediaType = watch('mediaType');
   
-  // Toggle advanced search options
   const toggleAdvanced = () => {
     setShowAdvanced(!showAdvanced);
   };
   
-  // Reset the form
   const handleReset = () => {
     reset({
       query: '',
@@ -73,7 +63,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
     setShowAdvanced(false);
   };
   
-  // Submit handler
   const onSubmit = (data) => {
     onSearch(data);
   };
@@ -91,7 +80,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
     >
       <form onSubmit={handleSubmit(onSubmit)}>
         <Grid container spacing={2}>
-          {/* Search query input */}
           <Grid item xs={12} md={6}>
             <Controller
               name="query"
@@ -123,7 +111,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
             />
           </Grid>
           
-          {/* Media type selection */}
           <Grid item xs={12} md={3}>
             <Controller
               name="mediaType"
@@ -144,7 +131,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
             />
           </Grid>
           
-          {/* Search button */}
           <Grid item xs={12} md={3}>
             <Button
               type="submit"
@@ -160,7 +146,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
             </Button>
           </Grid>
           
-          {/* Advanced search toggle */}
           <Grid item xs={12}>
             <Box display="flex" justifyContent="center" mb={1}>
               <Button
@@ -174,7 +159,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
             </Box>
           </Grid>
           
-          {/* Advanced search options */}
           <Grid item xs={12}>
             <Collapse in={showAdvanced}>
               <Box p={2} sx={{ backgroundColor: '#f8f9fa', borderRadius: 1 }}>
@@ -183,7 +167,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Grid container spacing={2}>
-                  {/* License type filter */}
                   <Grid item xs={12} md={4}>
                     <Controller
                       name="licenseType"
@@ -211,7 +194,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
                     />
                   </Grid>
                   
-                  {/* Creator filter */}
                   <Grid item xs={12} md={4}>
                     <Controller
                       name="creator"
@@ -229,7 +211,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
                     />
                   </Grid>
                   
-                  {/* Source filter */}
                   <Grid item xs={12} md={4}>
                     <Controller
                       name="source"
@@ -247,7 +228,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
                     />
                   </Grid>
                   
-                  {/* Tags filter */}
                   <Grid item xs={12}>
                     <Controller
                       name="tags"
@@ -265,7 +245,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
                     />
                   </Grid>
                   
-                  {/* Reset button */}
                   <Grid item xs={12}>
                     <Box display="flex" justifyContent="flex-end">
                       <Button
@@ -285,7 +264,6 @@ const SearchForm = ({ onSearch, defaultValues = {}, isLoading = false }) => {
         </Grid>
       </form>
       
-      {/* Media type information */}
       <Box mt={2} p={2} sx={{ backgroundColor: '#f1f8e9', borderRadius: 1, border: '1px solid #c5e1a5' }}>
         <Typography variant="body2" color="textSecondary">
           {mediaType === 'images' ? (

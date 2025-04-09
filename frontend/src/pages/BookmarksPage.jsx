@@ -1,4 +1,3 @@
-// src/pages/BookmarksPage.jsx
 import React, { useState, useMemo } from 'react';
 import {
   Container,
@@ -31,17 +30,12 @@ import { getBookmarks } from '../services/bookmarkService';
 import MediaCard from '../components/MediaCard';
 import { useUser } from '@clerk/clerk-react';
 
-/**
- * BookmarksPage component
- * Page displaying user's bookmarked media items
- */
 const BookmarksPage = () => {
   const { isSignedIn, user } = useUser();
   const [filter, setFilter] = useState('');
   const [mediaTypeFilter, setMediaTypeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   
-  // Fetch bookmarks
   const {
     data: bookmarks,
     isLoading,
@@ -50,46 +44,37 @@ const BookmarksPage = () => {
     refetch
   } = useQuery('bookmarks', getBookmarks, {
     enabled: isSignedIn,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
     refetchOnWindowFocus: true
   });
   
-  // Handle filter change
   const handleFilterChange = (event) => {
     setFilter(event.target.value);
   };
   
-  // Handle media type filter change
   const handleMediaTypeFilterChange = (event) => {
     setMediaTypeFilter(event.target.value);
   };
   
-  // Handle sort change
   const handleSortChange = (event) => {
     setSortBy(event.target.value);
   };
   
-  // Clear filter
   const clearFilter = () => {
     setFilter('');
   };
   
-  // Handle bookmark status change
   const handleBookmarkChange = (mediaId, isBookmarked) => {
     if (!isBookmarked) {
-      // If a bookmark was removed, refetch the bookmarks
       refetch();
     }
   };
   
-  // Filter and sort bookmarks
   const filteredAndSortedBookmarks = useMemo(() => {
     if (!bookmarks) return [];
-    
-    // Clone bookmarks to avoid mutating the original data
+
     let result = [...bookmarks];
     
-    // Apply text filter
     if (filter) {
       const lowerFilter = filter.toLowerCase();
       result = result.filter(item => 
@@ -98,12 +83,9 @@ const BookmarksPage = () => {
       );
     }
     
-    // Apply media type filter
     if (mediaTypeFilter !== 'all') {
       result = result.filter(item => item.media_type === mediaTypeFilter);
     }
-    
-    // Apply sorting
     if (sortBy === 'newest') {
       result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     } else if (sortBy === 'oldest') {
@@ -117,7 +99,6 @@ const BookmarksPage = () => {
     return result;
   }, [bookmarks, filter, mediaTypeFilter, sortBy]);
   
-  // Count bookmarks by type
   const bookmarkCounts = useMemo(() => {
     if (!bookmarks) return { total: 0, images: 0, audio: 0 };
     
@@ -128,7 +109,6 @@ const BookmarksPage = () => {
     };
   }, [bookmarks]);
   
-  // Show authentication message if not signed in
   if (!isSignedIn) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
@@ -139,7 +119,6 @@ const BookmarksPage = () => {
     );
   }
   
-  // Show loading state
   if (isLoading) {
     return (
       <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -150,7 +129,6 @@ const BookmarksPage = () => {
     );
   }
   
-  // Show error state
   if (isError) {
     return (
       <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -172,7 +150,6 @@ const BookmarksPage = () => {
       
       <Paper sx={{ mb: 4, p: 3 }}>
         <Grid container spacing={3}>
-          {/* Filter and sort options */}
           <Grid item xs={12} md={6}>
             <TextField
               label="Filter bookmarks"
@@ -241,7 +218,6 @@ const BookmarksPage = () => {
             </FormControl>
           </Grid>
           
-          {/* Bookmark counts */}
           <Grid item xs={12}>
             <Box display="flex" justifyContent="flex-start" sx={{ mt: 1 }}>
               <Typography variant="body2" color="text.secondary">
@@ -252,7 +228,6 @@ const BookmarksPage = () => {
         </Grid>
       </Paper>
       
-      {/* Show empty state if no bookmarks */}
       {(!bookmarks || bookmarks.length === 0) && (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <BookmarkIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
@@ -265,7 +240,6 @@ const BookmarksPage = () => {
         </Paper>
       )}
       
-      {/* Show empty state if no matching bookmarks */}
       {bookmarks && bookmarks.length > 0 && filteredAndSortedBookmarks.length === 0 && (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <SearchIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
@@ -278,7 +252,6 @@ const BookmarksPage = () => {
         </Paper>
       )}
       
-      {/* Display bookmarks grid */}
       {filteredAndSortedBookmarks.length > 0 && (
         <Grid container spacing={3}>
           {filteredAndSortedBookmarks.map((bookmark) => (

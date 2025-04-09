@@ -1,4 +1,3 @@
-// src/services/searchService.js
 import axios from 'axios';
 import config from '../config';
 import { getAuthHeaders } from './authService';
@@ -30,7 +29,6 @@ export const searchMedia = async (query, params = {}) => {
       }
     });
     
-    // Check if user is authenticated from response
     const isAuthenticated = response.data.auth_status === 'authenticated';
     
     return {
