@@ -91,7 +91,6 @@ class TestUserService:
         assert bookmark["media_creator"] == "Test Creator"
         assert bookmark["media_license"] == "CC BY"
         assert "created_at" in bookmark
-        s
         self.mock_repository.get_bookmark_by_user_and_media.assert_called_once_with(
             "test_user_id", "test_media_id"
         )
@@ -101,7 +100,6 @@ class TestUserService:
     async def test_create_bookmark_already_exists(self):
         """Test create_bookmark with already bookmarked media."""
         self.mock_repository.get_bookmark_by_user_and_media = AsyncMock(return_value=self.test_bookmark)
-        n
         with pytest.raises(ValueError) as exc_info:
             await self.user_service.create_bookmark(
                 user_id="test_user_id",

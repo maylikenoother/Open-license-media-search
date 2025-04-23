@@ -110,7 +110,7 @@ class SearchService:
         except aiohttp.ClientError as e:
             raise Exception(f"Failed to connect to Openverse API: {str(e)}")
     
-    async def get_media_details(saelf, media_id: str, media_type: str = "images") -> Dict[str, Any]:
+    async def get_media_details(salf, media_id: str, media_type: str = "images") -> Dict[str, Any]:
         """
         Get detailed information bout a specific media item.
         
