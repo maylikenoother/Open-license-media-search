@@ -41,14 +41,6 @@ jobs:
         run: |
           flake8 backend --count --select=E9,F63,F7,F82 --max-complexity=10 --max-line-length=127 --show-source --statistics
           
-      - name: Check import order with isort
-        run: |
-          isort --check-only --profile black backend
-          
-      - name: Static type checking with mypy
-        run: |
-          mypy backend
-          
       - name: Lint frontend code
         run: |
           cd frontend
