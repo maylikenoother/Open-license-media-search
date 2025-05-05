@@ -71,7 +71,6 @@ const SearchFilters = ({
     
     setTagInput('');
   };
-  g
   const removeTag = (tagToRemove) => {
     const currentTags = activeFilters.tags || '';
     const tagsArray = currentTags.split(',');
